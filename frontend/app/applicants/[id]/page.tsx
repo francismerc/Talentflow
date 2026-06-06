@@ -1,10 +1,4 @@
-import { notFound } from "next/navigation";
-import { ApplicantDetail } from "@/components/applicants/applicant-detail";
-import { applicants } from "@/lib/mock-data";
-
-export function generateStaticParams() {
-  return applicants.map((applicant) => ({ id: applicant.id }));
-}
+import { ApplicantDetailPage } from "@/components/applicants/applicant-detail-page";
 
 export default async function ApplicantDetailsPage({
   params,
@@ -12,8 +6,5 @@ export default async function ApplicantDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const applicant = applicants.find((item) => item.id === id);
-  if (!applicant) notFound();
-
-  return <ApplicantDetail applicant={applicant} />;
+  return <ApplicantDetailPage applicantId={id} />;
 }

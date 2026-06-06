@@ -22,12 +22,7 @@ import { StatusBadge } from "@/components/ui/badge";
 
 export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
   const [tab, setTab] = useState<"profile" | "resume">("profile");
-  const timeline = [
-    { title: "Application received", detail: "Resume received through Gmail", time: "Jun 5, 9:42 AM", complete: true },
-    { title: "Resume processed", detail: "Profile extracted and analyzed by TalentFlow AI", time: "Jun 5, 9:44 AM", complete: true },
-    { title: "Reviewed by recruiter", detail: "Alex Smith reviewed this candidate", time: "Jun 5, 2:16 PM", complete: true },
-    { title: "Shortlisted", detail: "Candidate moved to the shortlist", time: "Jun 6, 10:08 AM", complete: applicant.status === "Shortlisted" },
-  ];
+  const timeline = applicant.timeline ?? [];
 
   return (
     <div className="space-y-5">
@@ -47,8 +42,8 @@ export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
         </div>
         <div className="grid w-full grid-cols-3 gap-2 lg:flex lg:w-auto lg:flex-wrap">
           <Button variant="outline" className="px-2 sm:px-4"><Mail className="h-4 w-4" /> <span className="hidden sm:inline">Email</span></Button>
-          <Button variant="danger" className="px-2 sm:px-4"><X className="h-4 w-4" /> <span className="hidden sm:inline">Reject</span></Button>
-          <Button className="px-2 sm:px-4"><Check className="h-4 w-4" /> <span className="hidden sm:inline">Shortlist</span></Button>
+          <Button disabled variant="danger" title="Recruiter sign-in is required" className="px-2 sm:px-4"><X className="h-4 w-4" /> <span className="hidden sm:inline">Reject</span></Button>
+          <Button disabled title="Recruiter sign-in is required" className="px-2 sm:px-4"><Check className="h-4 w-4" /> <span className="hidden sm:inline">Shortlist</span></Button>
         </div>
       </section>
 
@@ -95,7 +90,7 @@ export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
               <div className="p-3 sm:p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                    <FileText className="h-4 w-4 text-accent" /> {applicant.name.replace(" ", "_")}_Resume.pdf
+                    <FileText className="h-4 w-4 text-accent" /> {applicant.resumeFileName ?? "No resume uploaded"}
                   </div>
                   <div className="flex gap-1">
                     <Button size="sm" variant="ghost"><Download className="h-3.5 w-3.5" /></Button>
@@ -134,6 +129,7 @@ export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
                   {applicant.matchedSkills.map((skill) => (
                     <span key={skill} className="rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700">{skill}</span>
                   ))}
+                  {!applicant.matchedSkills.length ? <span className="text-xs text-slate-400">AI analysis pending</span> : null}
                 </div>
               </div>
               <div>
@@ -144,6 +140,7 @@ export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
                   {applicant.missingSkills.map((skill) => (
                     <span key={skill} className="rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700">{skill}</span>
                   ))}
+                  {!applicant.missingSkills.length ? <span className="text-xs text-slate-400">AI analysis pending</span> : null}
                 </div>
               </div>
             </div>
@@ -200,7 +197,7 @@ export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
                   {index < timeline.length - 1 ? (
                     <div className="absolute left-[7px] top-4 h-full w-px bg-slate-200" />
                   ) : null}
-                  <span className={`relative z-10 mt-0.5 h-4 w-4 shrink-0 rounded-full border-4 border-white ring-1 ${item.complete ? "bg-accent ring-blue-200" : "bg-slate-200 ring-slate-200"}`} />
+                  <span className="relative z-10 mt-0.5 h-4 w-4 shrink-0 rounded-full border-4 border-white bg-accent ring-1 ring-blue-200" />
                   <div>
                     <p className="text-xs font-bold text-primary">{item.title}</p>
                     <p className="mt-1 text-[11px] leading-4 text-slate-500">{item.detail}</p>
@@ -208,6 +205,7 @@ export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
                   </div>
                 </div>
               ))}
+              {!timeline.length ? <p className="text-xs text-slate-400">No timeline events yet.</p> : null}
             </div>
           </section>
         </div>

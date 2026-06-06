@@ -1,0 +1,13 @@
+{
+  "name": "talentflow-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others --names frontend,backend --prefix-colors blue,green \"npm --prefix frontend run dev\" \"backend/.venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir backend\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "backend/.venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
