@@ -1,11 +1,11 @@
 import { ArrowUpRight, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
-import { applicants } from "@/lib/mock-data";
 import { Avatar } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/badge";
 import { ScoreRing } from "@/components/ui/score-ring";
+import type { Applicant } from "@/types";
 
-export function RecentApplicantsTable() {
+export function RecentApplicantsTable({ applicants }: { applicants: Applicant[] }) {
   return (
     <>
       <div className="divide-y divide-slate-100 sm:hidden">
@@ -66,7 +66,7 @@ export function RecentApplicantsTable() {
   );
 }
 
-export function TopCandidatesTable() {
+export function TopCandidatesTable({ applicants }: { applicants: Applicant[] }) {
   return (
     <div className="divide-y divide-slate-100">
       {applicants.slice(0, 4).map((applicant, index) => (

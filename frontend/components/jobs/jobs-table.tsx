@@ -5,15 +5,16 @@ import {
   BriefcaseBusiness,
   Edit3,
   Eye,
-  LockKeyhole,
   Search,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { getJobs } from "@/services/jobs";
+import { deleteJob, getJobs } from "@/services/jobs";
+import { JobFormModal } from "@/components/jobs/job-form-modal";
 import { ApiErrorState, TableSkeleton } from "@/components/ui/api-state";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/modal";
 import type { Job } from "@/types";
 
 const PAGE_SIZE = 10;
@@ -25,10 +26,16 @@ export function JobsTable({ createRequest = 0 }: { createRequest?: number }) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showAuthNotice, setShowAuthNotice] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [deletingJob, setDeletingJob] = useState<Job | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (createRequest > 0) setShowAuthNotice(true);
+    if (createRequest > 0) {
+      setEditingJob(null);
+      setFormOpen(true);
+    }
   }, [createRequest]);
 
   const loadJobs = useCallback(async () => {
@@ -57,6 +64,25 @@ export function JobsTable({ createRequest = 0 }: { createRequest?: number }) {
   }, [loadJobs]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const handleDelete = async () => {
+    if (!deletingJob) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await deleteJob(deletingJob.id);
+      setDeletingJob(null);
+      await loadJobs();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Job could not be deleted.");
+      setDeletingJob(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+  const openEdit = (job: Job) => {
+    setEditingJob(job);
+    setFormOpen(true);
+  };
 
   return (
     <>
@@ -84,9 +110,16 @@ export function JobsTable({ createRequest = 0 }: { createRequest?: number }) {
         {!loading && !error && jobs.length ? (
           <>
             <div className="divide-y divide-slate-100 md:hidden">
-              {jobs.map((job) => <JobMobileCard key={job.id} job={job} />)}
+              {jobs.map((job) => (
+                <JobMobileCard
+                  key={job.id}
+                  job={job}
+                  onEdit={openEdit}
+                  onDelete={setDeletingJob}
+                />
+              ))}
             </div>
-            <JobDesktopTable jobs={jobs} />
+            <JobDesktopTable jobs={jobs} onEdit={openEdit} onDelete={setDeletingJob} />
           </>
         ) : null}
         {!loading && !error && jobs.length === 0 ? (
@@ -94,7 +127,7 @@ export function JobsTable({ createRequest = 0 }: { createRequest?: number }) {
             <BriefcaseBusiness className="h-8 w-8 text-slate-300" />
             <p className="mt-3 text-sm font-bold text-primary">No jobs found</p>
             <p className="mt-1 text-xs text-slate-400">
-              Create your first opening after recruiter authentication is connected.
+              Create your first opening to begin receiving candidates.
             </p>
           </div>
         ) : null}
@@ -111,30 +144,38 @@ export function JobsTable({ createRequest = 0 }: { createRequest?: number }) {
         ) : null}
       </div>
 
-      {showAuthNotice ? (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/35 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-floating">
-            <button onClick={() => setShowAuthNotice(false)} className="focus-ring absolute rounded-lg p-2 text-slate-400">
-              <span className="sr-only">Close</span>
-            </button>
-            <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-accent">
-              <LockKeyhole className="h-5 w-5" />
-            </span>
-            <h2 className="mt-4 text-base font-bold text-primary">Recruiter sign-in required</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              The Jobs API is connected. Creating and editing jobs will be enabled when Supabase recruiter authentication is added.
-            </p>
-            <Button className="mt-5 w-full" onClick={() => setShowAuthNotice(false)}>
-              Continue
-            </Button>
-          </div>
-        </div>
-      ) : null}
+      <JobFormModal
+        open={formOpen}
+        job={editingJob}
+        onClose={() => setFormOpen(false)}
+        onSaved={() => loadJobs()}
+      />
+      <ConfirmDialog
+        open={Boolean(deletingJob)}
+        title="Delete job?"
+        description={
+          deletingJob
+            ? `This permanently deletes “${deletingJob.title}”. Jobs with applicants cannot be deleted.`
+            : ""
+        }
+        confirmLabel="Delete job"
+        loading={deleting}
+        onCancel={() => setDeletingJob(null)}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }
 
-function JobMobileCard({ job }: { job: Job }) {
+function JobMobileCard({
+  job,
+  onEdit,
+  onDelete,
+}: {
+  job: Job;
+  onEdit: (job: Job) => void;
+  onDelete: (job: Job) => void;
+}) {
   return (
     <article className="p-4">
       <div className="flex items-start gap-3">
@@ -157,13 +198,21 @@ function JobMobileCard({ job }: { job: Job }) {
           <p className="text-xs font-bold text-primary">{job.applicants} applicants</p>
           <p className="mt-0.5 text-[10px] text-slate-400">Created {job.createdAt}</p>
         </div>
-        <JobActions jobId={job.id} />
+        <JobActions job={job} onEdit={onEdit} onDelete={onDelete} />
       </div>
     </article>
   );
 }
 
-function JobDesktopTable({ jobs }: { jobs: Job[] }) {
+function JobDesktopTable({
+  jobs,
+  onEdit,
+  onDelete,
+}: {
+  jobs: Job[];
+  onEdit: (job: Job) => void;
+  onDelete: (job: Job) => void;
+}) {
   return (
     <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-[860px] text-left">
@@ -197,7 +246,7 @@ function JobDesktopTable({ jobs }: { jobs: Job[] }) {
               <td className="px-4 py-4 font-bold text-primary">{job.applicants}</td>
               <td className="px-4 py-4 text-slate-500">{job.createdAt}</td>
               <td className="px-4 py-4"><StatusBadge status={job.status} /></td>
-              <td className="px-5 py-4"><JobActions jobId={job.id} /></td>
+              <td className="px-5 py-4"><JobActions job={job} onEdit={onEdit} onDelete={onDelete} /></td>
             </tr>
           ))}
         </tbody>
@@ -206,12 +255,20 @@ function JobDesktopTable({ jobs }: { jobs: Job[] }) {
   );
 }
 
-function JobActions({ jobId }: { jobId: string }) {
+function JobActions({
+  job,
+  onEdit,
+  onDelete,
+}: {
+  job: Job;
+  onEdit: (job: Job) => void;
+  onDelete: (job: Job) => void;
+}) {
   return (
     <div className="flex justify-end gap-1">
-      <Link href={`/jobs/${jobId}`} className="focus-ring rounded-md p-2 text-slate-400 hover:bg-blue-50 hover:text-accent"><Eye className="h-4 w-4" /></Link>
-      <button disabled title="Recruiter sign-in is required" className="rounded-md p-2 text-slate-300"><Edit3 className="h-4 w-4" /></button>
-      <button disabled title="Recruiter sign-in is required" className="rounded-md p-2 text-slate-300"><Trash2 className="h-4 w-4" /></button>
+      <Link href={`/jobs/${job.id}`} className="focus-ring rounded-md p-2 text-slate-400 hover:bg-blue-50 hover:text-accent"><Eye className="h-4 w-4" /></Link>
+      <button onClick={() => onEdit(job)} title="Edit job" className="focus-ring rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-primary"><Edit3 className="h-4 w-4" /></button>
+      <button onClick={() => onDelete(job)} title="Delete job" className="focus-ring rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
     </div>
   );
 }

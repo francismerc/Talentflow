@@ -20,7 +20,17 @@ import { Button } from "@/components/ui/button";
 import { ScoreRing } from "@/components/ui/score-ring";
 import { StatusBadge } from "@/components/ui/badge";
 
-export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
+export function ApplicantDetail({
+  applicant,
+  actionLoading,
+  actionError,
+  onStatusChange,
+}: {
+  applicant: Applicant;
+  actionLoading?: boolean;
+  actionError?: string;
+  onStatusChange?: (status: "shortlisted" | "rejected") => void;
+}) {
   const [tab, setTab] = useState<"profile" | "resume">("profile");
   const timeline = applicant.timeline ?? [];
 
@@ -42,10 +52,28 @@ export function ApplicantDetail({ applicant }: { applicant: Applicant }) {
         </div>
         <div className="grid w-full grid-cols-3 gap-2 lg:flex lg:w-auto lg:flex-wrap">
           <Button variant="outline" className="px-2 sm:px-4"><Mail className="h-4 w-4" /> <span className="hidden sm:inline">Email</span></Button>
-          <Button disabled variant="danger" title="Recruiter sign-in is required" className="px-2 sm:px-4"><X className="h-4 w-4" /> <span className="hidden sm:inline">Reject</span></Button>
-          <Button disabled title="Recruiter sign-in is required" className="px-2 sm:px-4"><Check className="h-4 w-4" /> <span className="hidden sm:inline">Shortlist</span></Button>
+          <Button
+            disabled={actionLoading || !["New", "Under Review", "Shortlisted", "Interview"].includes(applicant.status)}
+            onClick={() => onStatusChange?.("rejected")}
+            variant="danger"
+            className="px-2 sm:px-4"
+          >
+            <X className="h-4 w-4" /> <span className="hidden sm:inline">Reject</span>
+          </Button>
+          <Button
+            disabled={actionLoading || !["New", "Under Review"].includes(applicant.status)}
+            onClick={() => onStatusChange?.("shortlisted")}
+            className="px-2 sm:px-4"
+          >
+            <Check className="h-4 w-4" /> <span className="hidden sm:inline">Shortlist</span>
+          </Button>
         </div>
       </section>
+      {actionError ? (
+        <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700">
+          {actionError}
+        </p>
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[1.45fr_1fr]">
         <div className="space-y-5">

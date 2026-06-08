@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getJob } from "@/services/jobs";
+import { JobFormModal } from "@/components/jobs/job-form-modal";
 import { ApiErrorState } from "@/components/ui/api-state";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
 
   const loadJob = useCallback(async () => {
     setLoading(true);
@@ -76,7 +78,7 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
               <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{job.applicants} applicants</span>
             </div>
           </div>
-          <Button disabled title="Recruiter sign-in is required" variant="outline" className="w-full lg:w-auto">
+          <Button onClick={() => setEditOpen(true)} variant="outline" className="w-full lg:w-auto">
             <Edit3 className="h-4 w-4" /> Edit job
           </Button>
         </div>
@@ -131,6 +133,12 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
           )}
         </section>
       </div>
+      <JobFormModal
+        open={editOpen}
+        job={job}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => loadJob()}
+      />
     </div>
   );
 }

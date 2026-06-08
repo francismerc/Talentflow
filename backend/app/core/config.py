@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_debug: bool = False
     api_v1_prefix: str = "/api/v1"
+    frontend_url: str = "http://localhost:3000"
     backend_cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     supabase_url: str | None = None
@@ -19,6 +20,8 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
     google_redirect_uri: str | None = None
+    google_oauth_state_secret: SecretStr | None = None
+    google_token_encryption_key: SecretStr | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

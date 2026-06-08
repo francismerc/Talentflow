@@ -13,6 +13,10 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+All application routes are protected by Supabase authentication. Create a
+recruiter through the Supabase Authentication dashboard, then sign in at
+`http://localhost:3000/login`.
+
 ## Validation
 
 ```bash
@@ -20,7 +24,6 @@ npm run lint
 npm run build
 ```
 
-Jobs and Applicants list/detail screens read from the FastAPI backend. Dashboard,
-reports, settings, and AI Assistant data remain UI fixtures while their backend
-features are implemented. Configure the backend URL with
-`NEXT_PUBLIC_API_URL`.
+Dashboard, Jobs, and Applicants screens read from the FastAPI backend. Reports,
+settings, and AI Assistant data remain UI fixtures while their backend features
+are implemented. Configure the backend URL with `NEXT_PUBLIC_API_URL`.

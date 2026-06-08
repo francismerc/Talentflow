@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getApplicant } from "@/services/applicants";
+import { getApplicant, updateApplicantStatus } from "@/services/applicants";
 import { ApplicantDetail } from "@/components/applicants/applicant-detail";
 import { ApiErrorState } from "@/components/ui/api-state";
 import { PageSkeleton } from "@/components/loading/page-skeleton";
@@ -11,6 +11,8 @@ export function ApplicantDetailPage({ applicantId }: { applicantId: string }) {
   const [applicant, setApplicant] = useState<Applicant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   const loadApplicant = useCallback(async () => {
     setLoading(true);
@@ -32,6 +34,22 @@ export function ApplicantDetailPage({ applicantId }: { applicantId: string }) {
     loadApplicant();
   }, [loadApplicant]);
 
+  const handleStatusChange = async (status: "shortlisted" | "rejected") => {
+    setActionLoading(true);
+    setActionError("");
+    try {
+      setApplicant(await updateApplicantStatus(applicantId, status));
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Applicant status could not be updated.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) return <PageSkeleton />;
   if (error) {
     return (
@@ -40,5 +58,12 @@ export function ApplicantDetailPage({ applicantId }: { applicantId: string }) {
       </div>
     );
   }
-  return applicant ? <ApplicantDetail applicant={applicant} /> : null;
+  return applicant ? (
+    <ApplicantDetail
+      applicant={applicant}
+      actionLoading={actionLoading}
+      actionError={actionError}
+      onStatusChange={handleStatusChange}
+    />
+  ) : null;
 }

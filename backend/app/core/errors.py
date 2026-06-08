@@ -14,3 +14,11 @@ class NotFoundError(ApplicationError):
 
 class ConflictError(ApplicationError):
     status_code = 409
+
+
+class ConfigurationError(ApplicationError):
+    status_code = 503
+
+
+class IntegrationError(ApplicationError):
+    status_code = 502

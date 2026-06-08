@@ -12,7 +12,7 @@ export function StatCard({
 }: {
   title: string;
   value: string;
-  change: string;
+  change?: string;
   trend?: "up" | "down";
   icon: LucideIcon;
   tone: string;
@@ -29,18 +29,22 @@ export function StatCard({
           <Icon className="h-[18px] w-[18px]" />
         </span>
       </div>
-      <div className="mt-4 flex items-center gap-1 text-[11px]">
-        <span
-          className={cn(
-            "inline-flex items-center font-bold",
-            trend === "up" ? "text-emerald-600" : "text-red-500",
-          )}
-        >
-          <TrendIcon className="mr-0.5 h-3 w-3" />
-          {change}
-        </span>
-        <span className="text-slate-400">vs. last month</span>
-      </div>
+      {change ? (
+        <div className="mt-4 flex items-center gap-1 text-[11px]">
+          <span
+            className={cn(
+              "inline-flex items-center font-bold",
+              trend === "up" ? "text-emerald-600" : "text-red-500",
+            )}
+          >
+            <TrendIcon className="mr-0.5 h-3 w-3" />
+            {change}
+          </span>
+          <span className="text-slate-400">vs. last month</span>
+        </div>
+      ) : (
+        <p className="mt-4 text-[11px] font-medium text-slate-400">Live pipeline data</p>
+      )}
     </div>
   );
 }

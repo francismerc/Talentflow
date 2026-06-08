@@ -23,6 +23,10 @@ export async function apiRequest<T>(
     throw new ApiError("NEXT_PUBLIC_API_URL is not configured.", 500);
   }
 
+  const {
+    data: { session },
+  } = await getSupabaseBrowserClient().auth.getSession();
+
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
@@ -30,6 +34,9 @@ export async function apiRequest<T>(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        ...(session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {}),
         ...init?.headers,
       },
     });
@@ -50,3 +57,4 @@ export async function apiRequest<T>(
 
   return response.json() as Promise<T>;
 }
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";

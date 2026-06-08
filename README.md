@@ -38,6 +38,19 @@ This starts:
 
 Press `Ctrl+C` once to stop both development servers.
 
+## Recruiter account
+
+Dashboard routes require a Supabase recruiter account.
+
+1. Open the linked Supabase project.
+2. Go to **Authentication → Users**.
+3. Select **Add user → Create new user**.
+4. Enter the recruiter's email and a strong password.
+5. Enable automatic email confirmation for the manually created account.
+
+The database trigger creates the matching `public.users` profile. Sign in at
+`http://localhost:3000/login`.
+
 ## Frontend
 
 ```bash

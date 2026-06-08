@@ -15,6 +15,15 @@ export interface JobListParams {
   status?: "draft" | "active" | "closed";
 }
 
+export interface JobMutationInput {
+  title: string;
+  description: string;
+  required_skills: string[];
+  location: string | null;
+  employment_type: string;
+  status: string;
+}
+
 export async function getJobs(
   params: JobListParams = {},
 ): Promise<ApiListResponse<Job>> {
@@ -43,6 +52,32 @@ export async function getJob(jobId: string): Promise<JobDetail> {
     `/jobs/${jobId}`,
   );
   return mapJobDetail(response.data);
+}
+
+export async function createJob(payload: JobMutationInput): Promise<Job> {
+  const response = await apiRequest<ApiResponse<JobDetailApiRecord>>("/jobs", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return mapJob(response.data);
+}
+
+export async function updateJob(
+  jobId: string,
+  payload: JobMutationInput,
+): Promise<JobDetail> {
+  const response = await apiRequest<ApiResponse<JobDetailApiRecord>>(
+    `/jobs/${jobId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+  return mapJobDetail(response.data);
+}
+
+export async function deleteJob(jobId: string): Promise<void> {
+  await apiRequest(`/jobs/${jobId}`, { method: "DELETE" });
 }
 
 function mapJob(record: JobApiRecord): Job {

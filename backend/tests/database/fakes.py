@@ -38,11 +38,17 @@ class FakeQueryBuilder:
     def contains(self, *args: Any, **kwargs: Any) -> "FakeQueryBuilder":
         return self._record("contains", *args, **kwargs)
 
+    def is_(self, *args: Any, **kwargs: Any) -> "FakeQueryBuilder":
+        return self._record("is_", *args, **kwargs)
+
     def order(self, *args: Any, **kwargs: Any) -> "FakeQueryBuilder":
         return self._record("order", *args, **kwargs)
 
     def range(self, *args: Any, **kwargs: Any) -> "FakeQueryBuilder":
         return self._record("range", *args, **kwargs)
+
+    def limit(self, *args: Any, **kwargs: Any) -> "FakeQueryBuilder":
+        return self._record("limit", *args, **kwargs)
 
     def maybe_single(self) -> "FakeQueryBuilder":
         return self._record("maybe_single")

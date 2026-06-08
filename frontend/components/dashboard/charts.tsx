@@ -15,7 +15,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { monthlyApplications, skillsData, statusDistribution } from "@/lib/mock-data";
+import {
+  monthlyApplications as mockMonthlyApplications,
+  skillsData,
+  statusDistribution as mockStatusDistribution,
+} from "@/lib/mock-data";
 
 const tooltipStyle = {
   border: "1px solid #e2e8f0",
@@ -30,7 +34,13 @@ function useIsClient() {
   return useSyncExternalStore(subscribe, () => true, () => false);
 }
 
-export function MonthlyApplicationsChart({ compact = false }: { compact?: boolean }) {
+export function MonthlyApplicationsChart({
+  compact = false,
+  data,
+}: {
+  compact?: boolean;
+  data?: Array<{ month: string; applications: number; shortlisted: number }>;
+}) {
   const isClient = useIsClient();
   const height = compact ? "h-[250px]" : "h-[285px]";
 
@@ -39,7 +49,7 @@ export function MonthlyApplicationsChart({ compact = false }: { compact?: boolea
   return (
     <div className={height}>
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-        <AreaChart data={monthlyApplications} margin={{ top: 10, right: 8, left: -24, bottom: 0 }}>
+        <AreaChart data={data ?? mockMonthlyApplications} margin={{ top: 10, right: 8, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id="applicationsFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#2563EB" stopOpacity={0.22} />
@@ -63,8 +73,14 @@ export function MonthlyApplicationsChart({ compact = false }: { compact?: boolea
   );
 }
 
-export function StatusDistributionChart() {
+export function StatusDistributionChart({
+  data,
+}: {
+  data?: Array<{ name: string; value: number; color: string }>;
+}) {
   const isClient = useIsClient();
+  const chartData = data ?? mockStatusDistribution;
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   if (!isClient) return <div className="h-[210px] animate-pulse rounded-xl bg-slate-50" />;
 
@@ -74,7 +90,7 @@ export function StatusDistributionChart() {
         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <PieChart>
             <Pie
-              data={statusDistribution}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={58}
@@ -83,7 +99,7 @@ export function StatusDistributionChart() {
               dataKey="value"
               stroke="none"
             >
-              {statusDistribution.map((entry) => (
+              {chartData.map((entry) => (
                 <Cell key={entry.name} fill={entry.color} />
               ))}
             </Pie>
@@ -91,14 +107,14 @@ export function StatusDistributionChart() {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-          <span className="text-2xl font-bold text-primary">247</span>
+          <span className="text-2xl font-bold text-primary">{total}</span>
           <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
             Applicants
           </span>
         </div>
       </div>
       <div className="grid w-full grid-cols-2 gap-x-4 gap-y-3 sm:w-[45%] sm:grid-cols-1">
-        {statusDistribution.map((item) => (
+        {chartData.map((item) => (
           <div key={item.name} className="flex items-center gap-2 text-xs">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
             <span className="flex-1 text-slate-500">{item.name}</span>

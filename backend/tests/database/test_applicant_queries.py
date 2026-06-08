@@ -88,3 +88,26 @@ async def test_delete_applicant_uses_exact_count() -> None:
 
     assert deleted is True
     assert ("delete", (), {"count": "exact"}) in builder.calls
+
+
+async def test_create_from_resume_calls_atomic_rpc() -> None:
+    applicant_id = UUID("20000000-0000-4000-8000-000000000001")
+    builder = FakeQueryBuilder(FakeResponse(data=str(applicant_id)))
+    client = FakeSupabaseClient(builder)
+
+    result = await ApplicantQueries(client).create_from_resume(  # type: ignore[arg-type]
+        attachment_id=UUID("60000000-0000-4000-8000-000000000001"),
+        job_id=UUID("10000000-0000-4000-8000-000000000001"),
+        full_name="Francis Barluado",
+        email="francis@example.com",
+        phone=None,
+        location=None,
+        education=[],
+        experience=[],
+        total_experience_years=5,
+        skills=["React"],
+        resume_text="Resume text",
+    )
+
+    assert result == applicant_id
+    assert client.requested_tables == ["rpc:create_applicant_from_resume"]

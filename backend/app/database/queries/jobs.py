@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -109,6 +111,16 @@ class JobQueries:
             .execute()
         )
         return response.data if response is not None else None
+
+    async def list_active_for_matching(self) -> list[dict[str, Any]]:
+        response = await (
+            self._client.table("jobs")
+            .select("id,title,required_skills,status")
+            .eq("status", JobStatus.ACTIVE.value)
+            .order("title")
+            .execute()
+        )
+        return response.data
 
     async def create(self, values: dict[str, Any]) -> dict[str, Any]:
         response = await (

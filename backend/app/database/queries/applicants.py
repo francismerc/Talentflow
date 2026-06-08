@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -227,6 +229,40 @@ class ApplicantQueries:
             .execute()
         )
         return response.data[0]
+
+    async def create_from_resume(
+        self,
+        *,
+        attachment_id: UUID,
+        job_id: UUID,
+        full_name: str,
+        email: str,
+        phone: str | None,
+        location: str | None,
+        education: list[dict[str, Any]],
+        experience: list[dict[str, Any]],
+        total_experience_years: float | None,
+        skills: list[str],
+        resume_text: str,
+    ) -> UUID:
+        response = await self._client.rpc(
+            "create_applicant_from_resume",
+            {
+                "p_attachment_id": str(attachment_id),
+                "p_job_id": str(job_id),
+                "p_full_name": full_name,
+                "p_email": email,
+                "p_phone": phone,
+                "p_location": location,
+                "p_education": education,
+                "p_experience": experience,
+                "p_total_experience_years": total_experience_years,
+                "p_skills": skills,
+                "p_resume_text": resume_text,
+            },
+        ).execute()
+        value = response.data[0] if isinstance(response.data, list) else response.data
+        return UUID(str(value))
 
     async def update(
         self,

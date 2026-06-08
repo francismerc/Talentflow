@@ -10,8 +10,9 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { getApplicants } from "@/services/applicants";
+import { getApplicants, updateApplicantStatus } from "@/services/applicants";
 import { getJobs } from "@/services/jobs";
+import { ApplicantFormModal } from "@/components/applicants/applicant-form-modal";
 import { ApiErrorState, TableSkeleton } from "@/components/ui/api-state";
 import { Avatar } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/badge";
@@ -38,7 +39,7 @@ const scoreOptions = [
   { label: "Below 80", minimum: undefined, maximum: 79.99 },
 ];
 
-export function ApplicantsTable() {
+export function ApplicantsTable({ addRequest = 0 }: { addRequest?: number }) {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState("");
@@ -49,6 +50,12 @@ export function ApplicantsTable() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [updatingId, setUpdatingId] = useState("");
+
+  useEffect(() => {
+    if (addRequest > 0) setFormOpen(true);
+  }, [addRequest]);
 
   useEffect(() => {
     getJobs({ pageSize: 100 })
@@ -94,6 +101,25 @@ export function ApplicantsTable() {
     update();
   };
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const handleStatusChange = async (
+    applicantId: string,
+    nextStatus: "shortlisted" | "rejected",
+  ) => {
+    setUpdatingId(applicantId);
+    setError("");
+    try {
+      await updateApplicantStatus(applicantId, nextStatus);
+      await loadApplicants();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Applicant status could not be updated.",
+      );
+    } finally {
+      setUpdatingId("");
+    }
+  };
   const selectClass =
     "focus-ring h-10 appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium text-slate-600";
 
@@ -151,10 +177,10 @@ export function ApplicantsTable() {
         <>
           <div className="divide-y divide-slate-100 md:hidden">
             {applicants.map((applicant) => (
-              <ApplicantMobileCard key={applicant.id} applicant={applicant} />
+              <ApplicantMobileCard key={applicant.id} applicant={applicant} updating={updatingId === applicant.id} onStatusChange={handleStatusChange} />
             ))}
           </div>
-          <ApplicantDesktopTable applicants={applicants} />
+          <ApplicantDesktopTable applicants={applicants} updatingId={updatingId} onStatusChange={handleStatusChange} />
         </>
       ) : null}
       {!loading && !error && applicants.length === 0 ? (
@@ -183,6 +209,12 @@ export function ApplicantsTable() {
           </div>
         </div>
       ) : null}
+      <ApplicantFormModal
+        open={formOpen}
+        jobs={jobs.filter((job) => job.status !== "Closed")}
+        onClose={() => setFormOpen(false)}
+        onSaved={() => loadApplicants()}
+      />
     </div>
   );
 }
@@ -208,7 +240,15 @@ function FilterSelect({
   );
 }
 
-function ApplicantMobileCard({ applicant }: { applicant: Applicant }) {
+function ApplicantMobileCard({
+  applicant,
+  updating,
+  onStatusChange,
+}: {
+  applicant: Applicant;
+  updating: boolean;
+  onStatusChange: (id: string, status: "shortlisted" | "rejected") => void;
+}) {
   return (
     <article className="p-4">
       <div className="flex items-start gap-3">
@@ -229,12 +269,20 @@ function ApplicantMobileCard({ applicant }: { applicant: Applicant }) {
         </div>
         <StatusBadge status={applicant.status} />
       </div>
-      <ApplicantActions applicantId={applicant.id} mobile />
+      <ApplicantActions applicant={applicant} mobile updating={updating} onStatusChange={onStatusChange} />
     </article>
   );
 }
 
-function ApplicantDesktopTable({ applicants }: { applicants: Applicant[] }) {
+function ApplicantDesktopTable({
+  applicants,
+  updatingId,
+  onStatusChange,
+}: {
+  applicants: Applicant[];
+  updatingId: string;
+  onStatusChange: (id: string, status: "shortlisted" | "rejected") => void;
+}) {
   return (
     <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-[900px] text-left">
@@ -264,7 +312,7 @@ function ApplicantDesktopTable({ applicants }: { applicants: Applicant[] }) {
               <td className="px-4 py-3.5 font-bold text-primary">{applicant.score || "—"}</td>
               <td className="px-4 py-3.5"><StatusBadge status={applicant.status} /></td>
               <td className="px-4 py-3.5 text-slate-500">{applicant.appliedAt}</td>
-              <td className="px-5 py-3.5"><ApplicantActions applicantId={applicant.id} /></td>
+              <td className="px-5 py-3.5"><ApplicantActions applicant={applicant} updating={updatingId === applicant.id} onStatusChange={onStatusChange} /></td>
             </tr>
           ))}
         </tbody>
@@ -273,19 +321,39 @@ function ApplicantDesktopTable({ applicants }: { applicants: Applicant[] }) {
   );
 }
 
-function ApplicantActions({ applicantId, mobile = false }: { applicantId: string; mobile?: boolean }) {
+function ApplicantActions({
+  applicant,
+  mobile = false,
+  updating,
+  onStatusChange,
+}: {
+  applicant: Applicant;
+  mobile?: boolean;
+  updating: boolean;
+  onStatusChange: (id: string, status: "shortlisted" | "rejected") => void;
+}) {
   const className = mobile
     ? "mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3"
     : "flex items-center justify-end gap-1";
   return (
     <div className={className}>
-      <Link href={`/applicants/${applicantId}`} className={mobile ? "focus-ring flex h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-50 text-xs font-semibold text-accent" : "focus-ring rounded-md p-2 text-slate-400 hover:bg-blue-50 hover:text-accent"}>
+      <Link href={`/applicants/${applicant.id}`} className={mobile ? "focus-ring flex h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-50 text-xs font-semibold text-accent" : "focus-ring rounded-md p-2 text-slate-400 hover:bg-blue-50 hover:text-accent"}>
         <Eye className="h-4 w-4" /> {mobile ? "View" : null}
       </Link>
-      <button disabled title="Recruiter sign-in is required" className={mobile ? "flex h-9 items-center justify-center gap-1.5 rounded-lg bg-slate-50 text-xs font-semibold text-slate-400" : "rounded-md p-2 text-slate-300"}>
+      <button
+        disabled={updating || !["New", "Under Review"].includes(applicant.status)}
+        onClick={() => onStatusChange(applicant.id, "shortlisted")}
+        title="Shortlist applicant"
+        className={mobile ? "focus-ring flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 text-xs font-semibold text-emerald-700 disabled:bg-slate-50 disabled:text-slate-400" : "focus-ring rounded-md p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 disabled:text-slate-300"}
+      >
         <Check className="h-4 w-4" /> {mobile ? "Shortlist" : null}
       </button>
-      <button disabled title="Recruiter sign-in is required" className={mobile ? "flex h-9 items-center justify-center gap-1.5 rounded-lg bg-slate-50 text-xs font-semibold text-slate-400" : "rounded-md p-2 text-slate-300"}>
+      <button
+        disabled={updating || !["New", "Under Review", "Shortlisted", "Interview"].includes(applicant.status)}
+        onClick={() => onStatusChange(applicant.id, "rejected")}
+        title="Reject applicant"
+        className={mobile ? "focus-ring flex h-9 items-center justify-center gap-1.5 rounded-lg bg-red-50 text-xs font-semibold text-red-600 disabled:bg-slate-50 disabled:text-slate-400" : "focus-ring rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 disabled:text-slate-300"}
+      >
         <X className="h-4 w-4" /> {mobile ? "Reject" : null}
       </button>
     </div>

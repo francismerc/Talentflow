@@ -79,6 +79,7 @@ export interface Applicant {
   score: number;
   status: ApplicantStatus;
   appliedAt: string;
+  appliedAtRaw?: string;
   education: string;
   experience: string;
   location: string;
