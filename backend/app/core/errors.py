@@ -22,3 +22,7 @@ class ConfigurationError(ApplicationError):
 
 class IntegrationError(ApplicationError):
     status_code = 502
+
+
+class ExternalRateLimitError(ApplicationError):
+    status_code = 429

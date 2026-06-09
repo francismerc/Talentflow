@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_applicant_service, get_current_user
+from app.api.dependencies import (
+    get_ai_analysis_service,
+    get_applicant_service,
+    get_current_user,
+)
 from app.core.errors import ConflictError, NotFoundError
 from app.database.queries.common import QueryPage
 from app.main import app
@@ -88,8 +92,24 @@ class FakeApplicantService:
         return None
 
 
+class FakeAIAnalysisService:
+    async def analyze_applicant(
+        self,
+        applicant_id: UUID,
+        *,
+        actor_user_id: UUID,
+    ) -> UUID:
+        assert applicant_id == APPLICANT_ID
+        assert actor_user_id == USER_ID
+        return UUID("70000000-0000-4000-8000-000000000001")
+
+
 def get_fake_applicant_service() -> FakeApplicantService:
     return FakeApplicantService()
+
+
+def get_fake_ai_analysis_service() -> FakeAIAnalysisService:
+    return FakeAIAnalysisService()
 
 
 def get_fake_current_user() -> AuthenticatedUser:
@@ -97,6 +117,7 @@ def get_fake_current_user() -> AuthenticatedUser:
 
 
 app.dependency_overrides[get_applicant_service] = get_fake_applicant_service
+app.dependency_overrides[get_ai_analysis_service] = get_fake_ai_analysis_service
 app.dependency_overrides[get_current_user] = get_fake_current_user
 client = TestClient(app)
 
@@ -150,6 +171,14 @@ def test_create_applicant_requires_authentication() -> None:
         app.dependency_overrides[get_current_user] = override
 
     assert response.status_code == 401
+
+
+def test_generate_analysis_returns_refreshed_applicant() -> None:
+    response = client.post(f"/api/v1/applicants/{APPLICANT_ID}/analysis")
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "Candidate analysis generated successfully."
+    assert response.json()["data"]["id"] == str(APPLICANT_ID)
 
 
 def test_invalid_status_transition_returns_conflict() -> None:

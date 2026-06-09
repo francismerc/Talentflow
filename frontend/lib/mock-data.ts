@@ -3,6 +3,7 @@ import type { Applicant, Job } from "@/types";
 export const applicants: Applicant[] = [
   {
     id: "maya-chen",
+    hasAnalysis: true,
     name: "Maya Chen",
     email: "maya.chen@example.com",
     phone: "+1 (415) 555-0142",
@@ -28,6 +29,7 @@ export const applicants: Applicant[] = [
   },
   {
     id: "ethan-wright",
+    hasAnalysis: true,
     name: "Ethan Wright",
     email: "ethan.wright@example.com",
     phone: "+1 (206) 555-0188",
@@ -49,6 +51,7 @@ export const applicants: Applicant[] = [
   },
   {
     id: "sofia-rodriguez",
+    hasAnalysis: true,
     name: "Sofia Rodriguez",
     email: "sofia.r@example.com",
     phone: "+1 (512) 555-0173",
@@ -69,6 +72,7 @@ export const applicants: Applicant[] = [
   },
   {
     id: "noah-williams",
+    hasAnalysis: true,
     name: "Noah Williams",
     email: "noah.w@example.com",
     phone: "+1 (312) 555-0165",
@@ -89,6 +93,7 @@ export const applicants: Applicant[] = [
   },
   {
     id: "olivia-patel",
+    hasAnalysis: true,
     name: "Olivia Patel",
     email: "olivia.patel@example.com",
     phone: "+1 (646) 555-0111",
@@ -108,6 +113,7 @@ export const applicants: Applicant[] = [
   },
   {
     id: "liam-kim",
+    hasAnalysis: true,
     name: "Liam Kim",
     email: "liam.kim@example.com",
     phone: "+1 (213) 555-0199",
@@ -127,6 +133,7 @@ export const applicants: Applicant[] = [
   },
   {
     id: "ava-thompson",
+    hasAnalysis: true,
     name: "Ava Thompson",
     email: "ava.t@example.com",
     phone: "+1 (617) 555-0134",

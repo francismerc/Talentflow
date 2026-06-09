@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     supabase_secret_key: SecretStr | None = None
 
     gemini_api_key: SecretStr | None = None
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_timeout_seconds: float = 30
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
     google_redirect_uri: str | None = None

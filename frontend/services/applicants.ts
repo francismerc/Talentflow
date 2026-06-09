@@ -103,12 +103,25 @@ export async function updateApplicantStatus(
   return mapApplicant(response.data);
 }
 
+export async function generateApplicantAnalysis(
+  applicantId: string,
+): Promise<Applicant> {
+  const response = await apiRequest<ApiResponse<ApplicantDetailApiRecord>>(
+    `/applicants/${applicantId}/analysis`,
+    {
+      method: "POST",
+    },
+  );
+  return mapApplicant(response.data);
+}
+
 function mapApplicant(record: ApplicantApiRecord): Applicant {
   const analysis = record.current_analysis;
   const detail = record as ApplicantDetailApiRecord;
 
   return {
     id: record.id,
+    hasAnalysis: Boolean(analysis?.id),
     name: record.full_name,
     email: record.email,
     phone: record.phone ?? "Not provided",

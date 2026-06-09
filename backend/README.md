@@ -114,15 +114,34 @@ marked `needs_review` instead of being assigned incorrectly.
 Legacy binary DOC parsing is intentionally deferred. Applicants should submit
 PDF or DOCX for automatic processing.
 
+## Gemini candidate analysis
+
+Apply `supabase/migrations/20260608190000_add_atomic_ai_analysis.sql`, then add
+Gemini settings to `backend/.env`:
+
+```env
+GEMINI_API_KEY=your_google_ai_studio_key
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_TIMEOUT_SECONDS=30
+```
+
+Use:
+
+```text
+POST /api/v1/applicants/{applicant_id}/analysis
+```
+
+The endpoint requires a valid Supabase access token. It generates a structured
+Gemini analysis, stores the result in `applicant_ai_analyses`, marks only the
+latest analysis as current, and adds an applicant timeline event. AI output is
+advisory only; it never changes applicant status or makes recruiter decisions.
+
 ## Validation
 
 ```bash
 ruff check .
 pytest
 ```
-
-Gemini and resume-processing services will be implemented in their respective
-development phases.
 
 ## Database queries
 

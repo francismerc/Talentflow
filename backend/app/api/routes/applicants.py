@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.api.dependencies import ApplicantServiceDependency, CurrentUserDependency
+from app.api.dependencies import (
+    AIAnalysisServiceDependency,
+    ApplicantServiceDependency,
+    CurrentUserDependency,
+)
 from app.database.queries.applicants import ApplicantFilters
 from app.database.queries.common import Pagination
 from app.schemas.applicants import (
@@ -97,6 +101,24 @@ async def create_applicant(
     applicant = await service.create_applicant(payload)
     return ApplicantResponse(
         message="Applicant created successfully.",
+        data=applicant,
+    )
+
+
+@router.post("/{applicant_id}/analysis", response_model=ApplicantResponse)
+async def analyze_applicant(
+    applicant_id: UUID,
+    analysis_service: AIAnalysisServiceDependency,
+    applicant_service: ApplicantServiceDependency,
+    current_user: CurrentUserDependency,
+) -> ApplicantResponse:
+    await analysis_service.analyze_applicant(
+        applicant_id,
+        actor_user_id=current_user.id,
+    )
+    applicant = await applicant_service.get_applicant(applicant_id)
+    return ApplicantResponse(
+        message="Candidate analysis generated successfully.",
         data=applicant,
     )
 

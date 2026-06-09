@@ -8,6 +8,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  LoaderCircle,
   Mail,
   MapPin,
   Phone,
@@ -24,12 +25,18 @@ export function ApplicantDetail({
   applicant,
   actionLoading,
   actionError,
+  analysisLoading,
+  analysisError,
   onStatusChange,
+  onGenerateAnalysis,
 }: {
   applicant: Applicant;
   actionLoading?: boolean;
   actionError?: string;
+  analysisLoading?: boolean;
+  analysisError?: string;
   onStatusChange?: (status: "shortlisted" | "rejected") => void;
+  onGenerateAnalysis?: () => void;
 }) {
   const [tab, setTab] = useState<"profile" | "resume">("profile");
   const timeline = applicant.timeline ?? [];
@@ -178,18 +185,50 @@ export function ApplicantDetail({
         <div className="space-y-5">
           <section className="surface overflow-hidden">
             <div className="border-b border-slate-100 bg-gradient-to-br from-blue-50 to-white p-5">
-              <div className="flex items-center gap-2 text-xs font-bold text-accent">
-                <Sparkles className="h-4 w-4" /> TalentFlow AI analysis
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-accent">
+                  <Sparkles className="h-4 w-4" /> TalentFlow AI analysis
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={analysisLoading}
+                  onClick={onGenerateAnalysis}
+                >
+                  {analysisLoading ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  {analysisLoading
+                    ? "Analyzing"
+                    : applicant.hasAnalysis
+                      ? "Reanalyze"
+                      : "Generate analysis"}
+                </Button>
               </div>
               <div className="mt-5 flex items-center gap-5">
                 <ScoreRing score={applicant.score} size="lg" />
                 <div>
-                  <p className="text-sm font-bold text-primary">Excellent match</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">Top 8% of candidates for this position</p>
+                  <p className="text-sm font-bold text-primary">
+                    {applicant.hasAnalysis
+                      ? "Job-fit analysis ready"
+                      : "Analysis pending"}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {applicant.hasAnalysis
+                      ? "Review the evidence below before making a hiring decision."
+                      : "Generate an evidence-based comparison with the job requirements."}
+                  </p>
                 </div>
               </div>
             </div>
             <div className="space-y-5 p-5">
+              {analysisError ? (
+                <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700">
+                  {analysisError}
+                </p>
+              ) : null}
               <div>
                 <p className="text-xs font-bold text-primary">Strengths</p>
                 <ul className="mt-2 space-y-2">
@@ -198,6 +237,11 @@ export function ApplicantDetail({
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" /> {strength}
                     </li>
                   ))}
+                  {!applicant.strengths.length ? (
+                    <li className="text-xs leading-5 text-slate-400">
+                      No analysis has been generated yet.
+                    </li>
+                  ) : null}
                 </ul>
               </div>
               <div>
@@ -208,12 +252,21 @@ export function ApplicantDetail({
                       <Circle className="mt-1 h-2.5 w-2.5 shrink-0 text-amber-500" /> {weakness}
                     </li>
                   ))}
+                  {!applicant.weaknesses.length ? (
+                    <li className="text-xs leading-5 text-slate-400">
+                      No areas have been identified yet.
+                    </li>
+                  ) : null}
                 </ul>
               </div>
               <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
                 <p className="text-xs font-bold text-primary">Recommendation</p>
                 <p className="mt-2 text-xs leading-5 text-slate-600">{applicant.recommendation}</p>
               </div>
+              <p className="text-[10px] leading-4 text-slate-400">
+                AI output is advisory. Recruiters must review the underlying resume
+                evidence and make the final decision.
+              </p>
             </div>
           </section>
 

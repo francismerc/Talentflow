@@ -72,6 +72,7 @@ export interface ApplicantDetailApiRecord extends ApplicantApiRecord {
 export interface Applicant {
   id: string;
   jobId?: string;
+  hasAnalysis: boolean;
   name: string;
   email: string;
   phone: string;
