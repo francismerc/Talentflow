@@ -193,6 +193,25 @@ The frontend always requires recruiter confirmation before calling the action
 endpoint. Status transitions, Gmail checks, idempotency, and timeline logging
 remain enforced by the existing application services.
 
+## Recruitment reports
+
+Apply:
+
+```text
+supabase/migrations/20260610100000_add_recruitment_reports.sql
+```
+
+The authenticated reporting endpoint is:
+
+```text
+GET /api/v1/reports/overview?months=6
+```
+
+Supported ranges are 1 to 24 months. PostgreSQL performs the aggregation and
+returns application totals, open positions, average current AI score,
+shortlisted rate, monthly volume, status distribution, top skills, and top
+positions. Candidate personal information is not included in report payloads.
+
 ## Validation
 
 ```bash

@@ -138,7 +138,11 @@ export function StatusDistributionChart({
   );
 }
 
-export function TopSkillsChart() {
+export function TopSkillsChart({
+  data,
+}: {
+  data?: Array<{ skill: string; candidates: number }>;
+}) {
   const isClient = useIsClient();
 
   if (!isClient) return <div className="h-[300px] animate-pulse rounded-xl bg-slate-50" />;
@@ -152,7 +156,7 @@ export function TopSkillsChart() {
         minHeight={300}
         initialDimension={{ width: 640, height: 300 }}
       >
-        <BarChart data={skillsData} layout="vertical" margin={{ top: 5, right: 15, left: 8, bottom: 5 }}>
+        <BarChart data={data ?? skillsData} layout="vertical" margin={{ top: 5, right: 15, left: 8, bottom: 5 }}>
           <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#eef2f7" />
           <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
           <YAxis

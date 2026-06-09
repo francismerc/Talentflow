@@ -14,6 +14,7 @@ from app.database.queries.email_attachments import EmailAttachmentQueries
 from app.database.queries.email_logs import EmailLogQueries
 from app.database.queries.gmail_integrations import GmailIntegrationQueries
 from app.database.queries.jobs import JobQueries
+from app.database.queries.reports import ReportQueries
 from app.gmail.service import GmailService
 from app.schemas.auth import AuthenticatedUser
 from app.services.ai_analysis import AIAnalysisService
@@ -21,6 +22,7 @@ from app.services.applicants import ApplicantService
 from app.services.assistant import AssistantActionService, AssistantService
 from app.services.automated_email import AutomatedEmailService
 from app.services.jobs import JobService
+from app.services.reports import ReportService
 from app.services.resume_processing import ResumeProcessingService
 from app.services.resume_storage import ResumeStorageService
 
@@ -125,6 +127,16 @@ def get_assistant_action_service(
 AssistantActionServiceDependency = Annotated[
     AssistantActionService,
     Depends(get_assistant_action_service),
+]
+
+
+def get_report_service(client: SupabaseClient) -> ReportService:
+    return ReportService(ReportQueries(client))
+
+
+ReportServiceDependency = Annotated[
+    ReportService,
+    Depends(get_report_service),
 ]
 
 
