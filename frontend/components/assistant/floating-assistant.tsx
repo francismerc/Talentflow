@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertCircle,
   ArrowUp,
   Bot,
   FileBarChart,
   GitCompareArrows,
   MessageCircle,
   Minus,
+  LoaderCircle,
   RotateCcw,
   Search,
   Sparkles,
@@ -15,6 +17,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useAssistantChat } from "@/hooks/use-assistant-chat";
 
 const suggestedPrompts = [
   { label: "Show top candidates", icon: Users },
@@ -22,11 +26,6 @@ const suggestedPrompts = [
   { label: "Compare candidates", icon: GitCompareArrows },
   { label: "Generate a report", icon: FileBarChart },
 ];
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
 
 export function FloatingAssistant({
   open,
@@ -36,31 +35,26 @@ export function FloatingAssistant({
   onOpenChange: (open: boolean) => void;
 }) {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const {
+    messages,
+    isLoading,
+    error,
+    submitMessage,
+    resetConversation,
+  } = useAssistantChat();
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function submitMessage(message: string) {
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage) return;
-
-    setMessages((current) => [
-      ...current,
-      { role: "user", content: trimmedMessage },
-      {
-        role: "assistant",
-        content:
-          "I found three strong matches: Maya Chen at 94, Ethan Wright at 91, and Sofia Rodriguez at 88. Maya leads on overall role fit, while Ethan has the strongest frontend background.",
-      },
-    ]);
+  async function send(message: string) {
     setInput("");
+    await submitMessage(message);
   }
 
-  function resetConversation() {
-    setMessages([]);
+  function reset() {
+    resetConversation();
     setInput("");
   }
 
@@ -85,7 +79,7 @@ export function FloatingAssistant({
             <p className="text-[10px] text-slate-300">Recruiter assistant · Online</p>
           </div>
           <button
-            onClick={resetConversation}
+            onClick={reset}
             aria-label="Start a new conversation"
             title="New conversation"
             className="focus-ring rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
@@ -124,7 +118,8 @@ export function FloatingAssistant({
                   {suggestedPrompts.map((prompt) => (
                     <button
                       key={prompt.label}
-                      onClick={() => submitMessage(prompt.label)}
+                      onClick={() => void send(prompt.label)}
+                      disabled={isLoading}
                       className="focus-ring flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-xs font-semibold text-slate-600 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/50 hover:text-accent"
                     >
                       <prompt.icon className="h-3.5 w-3.5 text-slate-400" />
@@ -155,9 +150,43 @@ export function FloatingAssistant({
                     )}
                   >
                     {message.content}
+                    {message.role === "assistant" && message.candidates?.length ? (
+                      <div className="mt-3 space-y-2">
+                        {message.candidates.slice(0, 4).map((candidate) => (
+                          <Link
+                            key={candidate.applicant_id}
+                            href={`/applicants/${candidate.applicant_id}`}
+                            onClick={() => onOpenChange(false)}
+                            className="block rounded-xl border border-slate-200 bg-slate-50 p-2.5 transition hover:border-blue-200"
+                          >
+                            <p className="truncate text-[11px] font-bold text-primary">
+                              {candidate.name}
+                            </p>
+                            <p className="truncate text-[9px] text-slate-400">
+                              {candidate.job_title} · {candidate.score === null ? "Not analyzed" : `${candidate.score}% match`}
+                            </p>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}
+              {isLoading ? (
+                <div className="flex gap-2.5">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary text-white">
+                    <Bot className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="flex items-center gap-2 rounded-2xl rounded-tl-md border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-400">
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> Thinking...
+                  </div>
+                </div>
+              ) : null}
+              {error ? (
+                <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-[10px] leading-4 text-red-700">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {error}
+                </div>
+              ) : null}
               <div ref={messageEndRef} />
             </div>
           )}
@@ -167,7 +196,7 @@ export function FloatingAssistant({
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              submitMessage(input);
+              void send(input);
             }}
           >
             <div className="relative rounded-xl border border-slate-200 bg-white transition focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100">
@@ -177,7 +206,7 @@ export function FloatingAssistant({
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
-                    submitMessage(input);
+                    void send(input);
                   }
                 }}
                 placeholder="Ask about your candidates..."
@@ -186,7 +215,7 @@ export function FloatingAssistant({
               />
               <button
                 type="submit"
-                disabled={!input.trim()}
+                disabled={!input.trim() || isLoading}
                 aria-label="Send message"
                 className="focus-ring absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-lg bg-primary text-white transition hover:bg-secondary disabled:bg-slate-200"
               >

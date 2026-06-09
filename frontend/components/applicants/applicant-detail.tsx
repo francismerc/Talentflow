@@ -327,7 +327,7 @@ export function ApplicantDetail({
             <h2 className="text-sm font-bold text-primary">Candidate timeline</h2>
             <div className="mt-5">
               {timeline.map((item, index) => (
-                <div key={item.title} className="relative flex gap-3 pb-6 last:pb-0">
+                <div key={item.id} className="relative flex gap-3 pb-6 last:pb-0">
                   {index < timeline.length - 1 ? (
                     <div className="absolute left-[7px] top-4 h-full w-px bg-slate-200" />
                   ) : null}

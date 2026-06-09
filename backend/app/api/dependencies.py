@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.database.client import get_supabase_auth_client, get_supabase_client
 from app.database.queries.ai_analyses import AIAnalysisQueries
 from app.database.queries.applicants import ApplicantQueries
+from app.database.queries.assistant import AssistantQueries
 from app.database.queries.email_attachments import EmailAttachmentQueries
 from app.database.queries.email_logs import EmailLogQueries
 from app.database.queries.gmail_integrations import GmailIntegrationQueries
@@ -17,6 +18,7 @@ from app.gmail.service import GmailService
 from app.schemas.auth import AuthenticatedUser
 from app.services.ai_analysis import AIAnalysisService
 from app.services.applicants import ApplicantService
+from app.services.assistant import AssistantService
 from app.services.automated_email import AutomatedEmailService
 from app.services.jobs import JobService
 from app.services.resume_processing import ResumeProcessingService
@@ -70,6 +72,29 @@ def get_ai_analysis_service(client: SupabaseClient) -> AIAnalysisService:
 AIAnalysisServiceDependency = Annotated[
     AIAnalysisService,
     Depends(get_ai_analysis_service),
+]
+
+
+def get_assistant_service(client: SupabaseClient) -> AssistantService:
+    settings = get_settings()
+    api_key = (
+        settings.gemini_api_key.get_secret_value()
+        if settings.gemini_api_key
+        else ""
+    )
+    return AssistantService(
+        AssistantQueries(client),
+        GeminiClient(
+            api_key=api_key,
+            model=settings.gemini_model,
+            timeout_seconds=settings.gemini_timeout_seconds,
+        ),
+    )
+
+
+AssistantServiceDependency = Annotated[
+    AssistantService,
+    Depends(get_assistant_service),
 ]
 
 

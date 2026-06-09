@@ -47,8 +47,14 @@ export function MonthlyApplicationsChart({
   if (!isClient) return <div className={`${height} animate-pulse rounded-xl bg-slate-50`} />;
 
   return (
-    <div className={height}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+    <div className={`${height} min-w-0`}>
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        minHeight={250}
+        initialDimension={{ width: 640, height: compact ? 250 : 285 }}
+      >
         <AreaChart data={data ?? mockMonthlyApplications} margin={{ top: 10, right: 8, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id="applicationsFill" x1="0" y1="0" x2="0" y2="1">
@@ -86,8 +92,14 @@ export function StatusDistributionChart({
 
   return (
     <div className="flex flex-col items-center gap-2 sm:flex-row">
-      <div className="relative h-[210px] w-full sm:w-[55%]">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <div className="relative h-[210px] min-w-0 w-full sm:w-[55%]">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          minHeight={210}
+          initialDimension={{ width: 320, height: 210 }}
+        >
           <PieChart>
             <Pie
               data={chartData}
@@ -132,8 +144,14 @@ export function TopSkillsChart() {
   if (!isClient) return <div className="h-[300px] animate-pulse rounded-xl bg-slate-50" />;
 
   return (
-    <div className="h-[300px]">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+    <div className="h-[300px] min-w-0">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        minHeight={300}
+        initialDimension={{ width: 640, height: 300 }}
+      >
         <BarChart data={skillsData} layout="vertical" margin={{ top: 5, right: 15, left: 8, bottom: 5 }}>
           <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#eef2f7" />
           <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />

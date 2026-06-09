@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
+from pydantic import BaseModel
 
 from app.core.errors import (
     ConfigurationError,
@@ -68,6 +69,12 @@ class GeminiAnalysisResult:
     metadata: dict[str, Any]
 
 
+@dataclass(frozen=True, slots=True)
+class GeminiStructuredResult[StructuredOutput: BaseModel]:
+    output: StructuredOutput
+    metadata: dict[str, Any]
+
+
 class GeminiClient:
     def __init__(
         self,
@@ -87,10 +94,30 @@ class GeminiClient:
         return self._model
 
     async def analyze(self, prompt: str) -> GeminiAnalysisResult:
+        result = await self.generate_structured(
+            prompt=prompt,
+            system_instruction=self._analysis_system_instruction(),
+            response_schema=ANALYSIS_RESPONSE_SCHEMA,
+            output_model=CandidateAnalysisOutput,
+        )
+        return GeminiAnalysisResult(
+            output=result.output,
+            metadata=result.metadata,
+        )
+
+    async def generate_structured[StructuredOutput: BaseModel](
+        self,
+        *,
+        prompt: str,
+        system_instruction: str,
+        response_schema: dict[str, Any],
+        output_model: type[StructuredOutput],
+        max_output_tokens: int = 2048,
+    ) -> GeminiStructuredResult[StructuredOutput]:
         url = f"{GEMINI_API_BASE_URL}/{self._model}:generateContent"
         payload = {
             "systemInstruction": {
-                "parts": [{"text": self._system_instruction()}],
+                "parts": [{"text": system_instruction}],
             },
             "contents": [
                 {
@@ -100,12 +127,12 @@ class GeminiClient:
             ],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 2048,
+                "maxOutputTokens": max_output_tokens,
                 "thinkingConfig": {
                     "thinkingBudget": 0,
                 },
                 "responseMimeType": "application/json",
-                "responseJsonSchema": ANALYSIS_RESPONSE_SCHEMA,
+                "responseJsonSchema": response_schema,
             },
         }
         async with httpx.AsyncClient(timeout=self._timeout_seconds) as client:
@@ -147,12 +174,12 @@ class GeminiClient:
         response_payload = response.json()
         text = self._extract_text(response_payload)
         try:
-            output = self._parse_output(text)
+            output = self._parse_output(text, output_model)
         except (TypeError, ValueError) as exception:
             raise IntegrationError(
-                "Gemini returned an invalid candidate analysis."
+                "Gemini returned an invalid structured response."
             ) from exception
-        return GeminiAnalysisResult(
+        return GeminiStructuredResult(
             output=output,
             metadata={
                 "model_version": response_payload.get("modelVersion"),
@@ -163,7 +190,10 @@ class GeminiClient:
         )
 
     @staticmethod
-    def _parse_output(text: str) -> CandidateAnalysisOutput:
+    def _parse_output[StructuredOutput: BaseModel](
+        text: str,
+        output_model: type[StructuredOutput] = CandidateAnalysisOutput,
+    ) -> StructuredOutput:
         try:
             payload = json.loads(text)
         except json.JSONDecodeError:
@@ -175,7 +205,7 @@ class GeminiClient:
 
         if not isinstance(payload, dict):
             raise ValueError("Candidate analysis must be a JSON object.")
-        return CandidateAnalysisOutput.model_validate(payload)
+        return output_model.model_validate(payload)
 
     @staticmethod
     def _format_http_error(response: httpx.Response) -> str:
@@ -220,7 +250,7 @@ class GeminiClient:
         return "".join(text_parts)
 
     @staticmethod
-    def _system_instruction() -> str:
+    def _analysis_system_instruction() -> str:
         return (
             "You are a recruitment decision-support assistant. Analyze candidates "
             "only against the supplied job requirements using evidence in the resume. "

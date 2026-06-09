@@ -166,6 +166,20 @@ POST /api/v1/applicants/{applicant_id}/emails/{email_type}
 
 Supported email types are `acknowledgment`, `shortlisted`, and `rejected`.
 
+## Recruiter assistant
+
+The authenticated assistant endpoint is:
+
+```text
+POST /api/v1/assistant/chat
+```
+
+The assistant receives a bounded, read-only snapshot of jobs and applicants.
+It can search candidates by skill or score, summarize the pipeline, explain
+stored AI scores, and compare candidates. Raw resumes, email addresses, phone
+numbers, Gmail tokens, and environment secrets are excluded from its context.
+The assistant cannot modify records or perform recruiter actions.
+
 ## Validation
 
 ```bash
