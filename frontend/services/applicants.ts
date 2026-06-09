@@ -26,6 +26,11 @@ export interface ApplicantCreateInput {
   location?: string | null;
 }
 
+export type CandidateEmailType =
+  | "acknowledgment"
+  | "shortlisted"
+  | "rejected";
+
 export async function getApplicants(
   params: ApplicantListParams = {},
 ): Promise<ApiListResponse<Applicant>> {
@@ -115,6 +120,15 @@ export async function generateApplicantAnalysis(
   return mapApplicant(response.data);
 }
 
+export async function sendCandidateEmail(
+  applicantId: string,
+  emailType: CandidateEmailType,
+): Promise<void> {
+  await apiRequest(`/applicants/${applicantId}/emails/${emailType}`, {
+    method: "POST",
+  });
+}
+
 function mapApplicant(record: ApplicantApiRecord): Applicant {
   const analysis = record.current_analysis;
   const detail = record as ApplicantDetailApiRecord;
@@ -152,6 +166,15 @@ function mapApplicant(record: ApplicantApiRecord): Applicant {
       title: item.title,
       detail: item.description ?? "",
       time: formatDateTime(item.occurred_at),
+    })),
+    emails: (detail.emails ?? []).map((email) => ({
+      id: email.id,
+      type: email.email_type,
+      recipient: email.recipient_email,
+      subject: email.subject,
+      status: email.status,
+      error: email.error_message,
+      sentAt: formatDateTime(email.sent_at ?? email.created_at),
     })),
   };
 }

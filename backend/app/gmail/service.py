@@ -2,6 +2,7 @@ import base64
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from email.message import EmailMessage
 from email.utils import parseaddr, parsedate_to_datetime
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,12 @@ class GmailMessageMetadata:
     subject: str
     received_at: datetime
     attachments: list[GmailAttachment]
+
+
+@dataclass(frozen=True, slots=True)
+class GmailSendResult:
+    message_id: str
+    thread_id: str | None
 
 
 class GmailService:
@@ -160,6 +167,80 @@ class GmailService:
 
     async def disconnect(self, user_id: UUID) -> None:
         await self._queries.delete(user_id)
+
+    async def update_settings(
+        self,
+        user_id: UUID,
+        *,
+        send_acknowledgment_emails: bool,
+    ) -> GmailConnection:
+        record = await self._queries.get_by_user_id(user_id)
+        if record is None:
+            raise ConflictError("Connect Gmail before updating email settings.")
+        updated = await self._queries.update(
+            user_id,
+            {"send_acknowledgment_emails": send_acknowledgment_emails},
+        )
+        return GmailConnection.model_validate(
+            {
+                **updated,
+                "oauth_configured": self._is_configured(),
+                "connected": updated["status"] == "connected",
+            }
+        )
+
+    async def send_message(
+        self,
+        user_id: UUID,
+        *,
+        recipient_email: str,
+        subject: str,
+        text_body: str,
+        html_body: str,
+        reply_to: str | None = None,
+        thread_id: str | None = None,
+    ) -> GmailSendResult:
+        integration = await self._queries.get_by_user_id(
+            user_id,
+            include_tokens=True,
+        )
+        if integration is None or integration.get("status") != "connected":
+            raise ConflictError("Connect Gmail before sending candidate emails.")
+
+        sender_email = str(integration["gmail_address"])
+        access_token = await self._get_valid_access_token(user_id, integration)
+        message = EmailMessage()
+        message["To"] = recipient_email
+        message["From"] = sender_email
+        message["Subject"] = subject
+        if reply_to:
+            message["Reply-To"] = reply_to
+        message.set_content(text_body)
+        message.add_alternative(html_body, subtype="html")
+
+        request_body: dict[str, str] = {
+            "raw": base64.urlsafe_b64encode(message.as_bytes()).decode("ascii").rstrip("=")
+        }
+        if thread_id:
+            request_body["threadId"] = thread_id
+
+        async with httpx.AsyncClient(timeout=20) as client:
+            try:
+                response = await client.post(
+                    f"{GMAIL_API_URL}/messages/send",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    json=request_body,
+                )
+                response.raise_for_status()
+            except httpx.HTTPError as exception:
+                raise IntegrationError(
+                    "Gmail could not send the candidate email."
+                ) from exception
+        payload = response.json()
+        return GmailSendResult(
+            message_id=self._required_string(payload, "id"),
+            thread_id=str(payload["threadId"]) if payload.get("threadId") else None,
+        )
 
     async def process_inbox(
         self,

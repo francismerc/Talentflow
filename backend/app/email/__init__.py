@@ -1,0 +1,1 @@
+"""Candidate email composition utilities."""

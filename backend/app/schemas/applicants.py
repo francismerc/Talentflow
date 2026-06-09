@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.schemas.emails import CandidateEmailLog
+
 
 class ApplicantStatus(StrEnum):
     NEW = "new"
@@ -203,6 +205,7 @@ class ApplicantDetail(ApplicantSummary):
     reviewed_at: datetime | None
     updated_at: datetime
     timeline: list[ApplicantTimelineItem] = Field(default_factory=list)
+    emails: list[CandidateEmailLog] = Field(default_factory=list)
 
 
 class ApplicantResponse(BaseModel):

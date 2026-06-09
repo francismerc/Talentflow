@@ -10,6 +10,8 @@ class ResumeProcessResult(BaseModel):
     applicants_created: int = 0
     needs_review: int = 0
     failed: int = 0
+    acknowledgments_sent: int = 0
+    acknowledgment_errors: int = 0
 
 
 class ResumeProcessResponse(BaseModel):

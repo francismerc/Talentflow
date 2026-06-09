@@ -9,6 +9,7 @@ from app.resume.extractor import CandidateExtractor
 from app.resume.job_matcher import JobMatcher
 from app.resume.parser import ResumeParser, ResumeParsingError
 from app.schemas.resumes import ResumeProcessResult
+from app.services.automated_email import AutomatedEmailService
 from app.services.resume_storage import ResumeStorageService
 
 
@@ -23,6 +24,7 @@ class ResumeProcessingService:
         parser: ResumeParser | None = None,
         extractor: CandidateExtractor | None = None,
         job_matcher: JobMatcher | None = None,
+        automated_email: AutomatedEmailService | None = None,
     ) -> None:
         self._attachments = attachments
         self._applicants = applicants
@@ -31,11 +33,13 @@ class ResumeProcessingService:
         self._parser = parser or ResumeParser()
         self._extractor = extractor or CandidateExtractor()
         self._job_matcher = job_matcher or JobMatcher()
+        self._automated_email = automated_email
 
     async def process_pending(
         self,
         *,
         max_attachments: int = 25,
+        actor_user_id: UUID | None = None,
     ) -> ResumeProcessResult:
         records = await self._attachments.list_stored_for_processing(
             limit=max_attachments
@@ -80,7 +84,7 @@ class ResumeProcessingService:
                     file_name=str(record["file_name"]),
                     job_skills=job_match.required_skills,
                 )
-                await self._applicants.create_from_resume(
+                applicant_id = await self._applicants.create_from_resume(
                     attachment_id=UUID(attachment_id),
                     job_id=job_match.job_id,
                     full_name=candidate.full_name,
@@ -95,6 +99,19 @@ class ResumeProcessingService:
                 )
                 processed_email_logs.add(email_log_id)
                 result.applicants_created += 1
+                if self._automated_email and actor_user_id:
+                    try:
+                        acknowledgment = (
+                            await self._automated_email.send_acknowledgment_if_enabled(
+                                applicant_id,
+                                actor_user_id=actor_user_id,
+                            )
+                        )
+                        if acknowledgment is not None:
+                            result.acknowledgments_sent += 1
+                    except Exception:
+                        # Applicant creation is authoritative; delivery failures are logged.
+                        result.acknowledgment_errors += 1
             except ResumeParsingError as exception:
                 await self._mark_needs_review(attachment_id, str(exception))
                 result.needs_review += 1

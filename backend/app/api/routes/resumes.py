@@ -16,10 +16,11 @@ router = APIRouter(prefix="/resumes")
 async def process_stored_resumes(
     payload: ResumeProcessRequest,
     service: ResumeProcessingServiceDependency,
-    _: CurrentUserDependency,
+    current_user: CurrentUserDependency,
 ) -> ResumeProcessResponse:
     result = await service.process_pending(
         max_attachments=payload.max_attachments,
+        actor_user_id=current_user.id,
     )
     return ResumeProcessResponse(
         message="Stored resume processing completed.",

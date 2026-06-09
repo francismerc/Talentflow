@@ -26,6 +26,7 @@ export const applicants: Applicant[] = [
     missingSkills: ["Fintech", "Amplitude"],
     recommendation:
       "Strongly recommend advancing to the portfolio interview. Maya's experience closely matches the role's core requirements.",
+    emails: [],
   },
   {
     id: "ethan-wright",
@@ -48,6 +49,7 @@ export const applicants: Applicant[] = [
     missingSkills: ["Python", "LLM tooling"],
     recommendation:
       "Advance to technical interview. Ethan is an excellent fit for the frontend scope and raises the quality bar.",
+    emails: [],
   },
   {
     id: "sofia-rodriguez",
@@ -69,6 +71,7 @@ export const applicants: Applicant[] = [
     matchedSkills: ["Product Strategy", "Analytics", "B2B SaaS", "Roadmapping"],
     missingSkills: ["Recruiting Tech"],
     recommendation: "Proceed to recruiter screen with emphasis on early-stage operating style.",
+    emails: [],
   },
   {
     id: "noah-williams",
@@ -90,6 +93,7 @@ export const applicants: Applicant[] = [
     matchedSkills: ["Python", "FastAPI", "AWS", "Docker", "Redis"],
     missingSkills: ["Supabase", "Gemini API"],
     recommendation: "Advance to technical screen and explore database depth.",
+    emails: [],
   },
   {
     id: "olivia-patel",
@@ -110,6 +114,7 @@ export const applicants: Applicant[] = [
     matchedSkills: ["React", "TypeScript", "Storybook", "Cypress"],
     missingSkills: ["Next.js", "Recharts"],
     recommendation: "Keep in active review; portfolio demonstrates strong execution.",
+    emails: [],
   },
   {
     id: "liam-kim",
@@ -130,6 +135,7 @@ export const applicants: Applicant[] = [
     matchedSkills: ["Python", "RAG", "Gemini", "Evaluation"],
     missingSkills: ["FastAPI", "Team Leadership"],
     recommendation: "Consider for a mid-level role or continue with a focused technical screen.",
+    emails: [],
   },
   {
     id: "ava-thompson",
@@ -150,6 +156,7 @@ export const applicants: Applicant[] = [
     matchedSkills: ["Research", "Roadmapping"],
     missingSkills: ["B2B SaaS", "Analytics", "Automation"],
     recommendation: "Not recommended for this senior opening; retain for future associate roles.",
+    emails: [],
   },
 ];
 

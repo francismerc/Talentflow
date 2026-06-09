@@ -22,6 +22,7 @@ import {
   getGmailAuthorizationUrl,
   getGmailConnection,
   processGmailInbox,
+  updateGmailSettings,
   type GmailConnection,
   type GmailProcessResult,
 } from "@/services/gmail";
@@ -126,6 +127,7 @@ function GmailSettings() {
   const [processResult, setProcessResult] = useState<GmailProcessResult | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [parseResult, setParseResult] = useState<ResumeProcessResult | null>(null);
+  const [isSavingEmailSettings, setIsSavingEmailSettings] = useState(false);
 
   const loadConnection = useCallback(async () => {
     setIsLoading(true);
@@ -142,6 +144,23 @@ function GmailSettings() {
       setIsLoading(false);
     }
   }, []);
+
+  const updateAcknowledgmentSetting = async (checked: boolean) => {
+    if (!connection?.connected) return;
+    setIsSavingEmailSettings(true);
+    setError(null);
+    try {
+      setConnection(await updateGmailSettings(checked));
+    } catch (settingsError) {
+      setError(
+        settingsError instanceof Error
+          ? settingsError.message
+          : "Unable to update Gmail email settings.",
+      );
+    } finally {
+      setIsSavingEmailSettings(false);
+    }
+  };
 
   useEffect(() => {
     void loadConnection();
@@ -306,11 +325,13 @@ function GmailSettings() {
               </Button>
             </div>
             {parseResult ? (
-              <div className="mt-4 grid gap-2 text-[11px] font-semibold text-slate-600 sm:grid-cols-4">
+              <div className="mt-4 grid gap-2 text-[11px] font-semibold text-slate-600 sm:grid-cols-3">
                 <ProcessMetric label="Scanned" value={parseResult.attachments_scanned} />
                 <ProcessMetric label="Applicants created" value={parseResult.applicants_created} />
                 <ProcessMetric label="Needs review" value={parseResult.needs_review} tone={parseResult.needs_review ? "warning" : "default"} />
                 <ProcessMetric label="Failed" value={parseResult.failed} tone={parseResult.failed ? "danger" : "default"} />
+                <ProcessMetric label="Acknowledgments sent" value={parseResult.acknowledgments_sent} />
+                <ProcessMetric label="Email errors" value={parseResult.acknowledgment_errors} tone={parseResult.acknowledgment_errors ? "danger" : "default"} />
               </div>
             ) : null}
           </div>
@@ -339,8 +360,10 @@ function GmailSettings() {
         />
         <ToggleRow
           title="Send acknowledgment emails"
-          description="Will be enabled in the automated email phase."
-          disabled
+          description="Automatically confirm receipt after a resume creates an applicant."
+          checked={connection?.send_acknowledgment_emails ?? false}
+          disabled={!connection?.connected || isSavingEmailSettings}
+          onChange={(checked) => void updateAcknowledgmentSetting(checked)}
         />
         <ToggleRow
           title="Include email body in analysis"
@@ -426,12 +449,12 @@ function Field({ label, defaultValue, type = "text", readOnly = false }: { label
   return <label className="block text-xs font-semibold text-slate-600">{label}<input type={type} defaultValue={defaultValue} readOnly={readOnly} className={`${inputClass} ${readOnly ? "bg-slate-50 text-slate-500" : ""}`} /></label>;
 }
 
-function ToggleRow({ title, description, checked = false, disabled = false }: { title: string; description: string; checked?: boolean; disabled?: boolean }) {
+function ToggleRow({ title, description, checked = false, disabled = false, onChange }: { title: string; description: string; checked?: boolean; disabled?: boolean; onChange?: (checked: boolean) => void }) {
   return (
     <label className={`flex items-center justify-between gap-5 ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
       <span><span className="block text-xs font-semibold text-slate-700">{title}</span><span className="mt-1 block text-[11px] leading-4 text-slate-400">{description}</span></span>
       <span className="relative shrink-0">
-        <input type="checkbox" defaultChecked={checked} disabled={disabled} className="peer sr-only" />
+        <input type="checkbox" checked={checked} onChange={(event) => onChange?.(event.target.checked)} disabled={disabled} className="peer sr-only" />
         <span className="block h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-accent" />
         <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
       </span>

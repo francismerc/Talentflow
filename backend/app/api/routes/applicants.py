@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.api.dependencies import (
     AIAnalysisServiceDependency,
     ApplicantServiceDependency,
+    AutomatedEmailServiceDependency,
     CurrentUserDependency,
 )
 from app.database.queries.applicants import ApplicantFilters
@@ -21,6 +22,7 @@ from app.schemas.applicants import (
     ApplicantStatusUpdate,
     ApplicantUpdate,
 )
+from app.schemas.emails import CandidateEmailResponse, CandidateEmailType
 
 router = APIRouter(prefix="/applicants")
 
@@ -120,6 +122,27 @@ async def analyze_applicant(
     return ApplicantResponse(
         message="Candidate analysis generated successfully.",
         data=applicant,
+    )
+
+
+@router.post(
+    "/{applicant_id}/emails/{email_type}",
+    response_model=CandidateEmailResponse,
+)
+async def send_candidate_email(
+    applicant_id: UUID,
+    email_type: CandidateEmailType,
+    service: AutomatedEmailServiceDependency,
+    current_user: CurrentUserDependency,
+) -> CandidateEmailResponse:
+    email_log = await service.send_candidate_email(
+        applicant_id,
+        email_type,
+        actor_user_id=current_user.id,
+    )
+    return CandidateEmailResponse(
+        message="Candidate email sent successfully.",
+        data=email_log,
     )
 
 

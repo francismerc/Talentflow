@@ -51,6 +51,21 @@ class FakeGmailService:
             duplicates_skipped=1,
         )
 
+    async def update_settings(
+        self,
+        _: UUID,
+        *,
+        send_acknowledgment_emails: bool,
+    ) -> GmailConnection:
+        return GmailConnection(
+            oauth_configured=True,
+            connected=True,
+            gmail_address="recruitment@example.com",
+            scopes=["https://www.googleapis.com/auth/gmail.modify"],
+            status="connected",
+            send_acknowledgment_emails=send_acknowledgment_emails,
+        )
+
 
 fake_service = FakeGmailService()
 
@@ -128,3 +143,13 @@ def test_process_gmail_inbox_returns_batch_summary() -> None:
         "unsupported_skipped": 0,
         "errors": 0,
     }
+
+
+def test_update_gmail_settings_enables_acknowledgments() -> None:
+    response = client.patch(
+        "/api/v1/gmail/settings",
+        json={"send_acknowledgment_emails": True},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["send_acknowledgment_emails"] is True

@@ -9,8 +9,14 @@ from app.schemas.resumes import ResumeProcessResult
 
 
 class FakeResumeProcessingService:
-    async def process_pending(self, *, max_attachments: int) -> ResumeProcessResult:
+    async def process_pending(
+        self,
+        *,
+        max_attachments: int,
+        actor_user_id: UUID,
+    ) -> ResumeProcessResult:
         assert max_attachments == 25
+        assert actor_user_id == UUID("90000000-0000-4000-8000-000000000001")
         return ResumeProcessResult(
             attachments_scanned=1,
             applicants_created=1,
@@ -45,4 +51,6 @@ def test_process_stored_resumes_returns_summary() -> None:
         "applicants_created": 1,
         "needs_review": 0,
         "failed": 0,
+        "acknowledgments_sent": 0,
+        "acknowledgment_errors": 0,
     }

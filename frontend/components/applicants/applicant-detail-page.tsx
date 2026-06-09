@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import {
   generateApplicantAnalysis,
   getApplicant,
+  sendCandidateEmail,
+  type CandidateEmailType,
   updateApplicantStatus,
 } from "@/services/applicants";
 import { ApplicantDetail } from "@/components/applicants/applicant-detail";
@@ -44,12 +46,42 @@ export function ApplicantDetailPage({ applicantId }: { applicantId: string }) {
     setActionLoading(true);
     setActionError("");
     try {
-      setApplicant(await updateApplicantStatus(applicantId, status));
+      const updatedApplicant = await updateApplicantStatus(applicantId, status);
+      setApplicant(updatedApplicant);
+      try {
+        await sendCandidateEmail(applicantId, status);
+        setApplicant(await getApplicant(applicantId));
+      } catch (emailError) {
+        setActionError(
+          `Status updated, but the email was not sent: ${
+            emailError instanceof Error
+              ? emailError.message
+              : "Unknown email delivery error."
+          }`,
+        );
+      }
     } catch (requestError) {
       setActionError(
         requestError instanceof Error
           ? requestError.message
           : "Applicant status could not be updated.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSendEmail = async (emailType: CandidateEmailType) => {
+    setActionLoading(true);
+    setActionError("");
+    try {
+      await sendCandidateEmail(applicantId, emailType);
+      setApplicant(await getApplicant(applicantId));
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Candidate email could not be sent.",
       );
     } finally {
       setActionLoading(false);
@@ -88,6 +120,7 @@ export function ApplicantDetailPage({ applicantId }: { applicantId: string }) {
       analysisLoading={analysisLoading}
       analysisError={analysisError}
       onStatusChange={handleStatusChange}
+      onSendEmail={handleSendEmail}
       onGenerateAnalysis={handleGenerateAnalysis}
     />
   ) : null;

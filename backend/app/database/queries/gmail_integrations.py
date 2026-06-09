@@ -12,6 +12,7 @@ status,
 last_error,
 last_synced_at,
 token_expires_at,
+send_acknowledgment_emails,
 created_at,
 updated_at
 """

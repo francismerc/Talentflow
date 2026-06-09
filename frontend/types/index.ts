@@ -67,6 +67,18 @@ export interface ApplicantDetailApiRecord extends ApplicantApiRecord {
     description: string | null;
     occurred_at: string;
   }>;
+  emails: ApplicantEmailApiRecord[];
+}
+
+export interface ApplicantEmailApiRecord {
+  id: string;
+  email_type: "acknowledgment" | "shortlisted" | "rejected";
+  recipient_email: string;
+  subject: string;
+  status: string;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
 }
 
 export interface Applicant {
@@ -97,6 +109,15 @@ export interface Applicant {
     title: string;
     detail: string;
     time: string;
+  }>;
+  emails: Array<{
+    id: string;
+    type: "acknowledgment" | "shortlisted" | "rejected";
+    recipient: string;
+    subject: string;
+    status: string;
+    error: string | null;
+    sentAt: string;
   }>;
 }
 

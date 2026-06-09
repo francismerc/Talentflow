@@ -136,6 +136,36 @@ Gemini analysis, stores the result in `applicant_ai_analyses`, marks only the
 latest analysis as current, and adds an applicant timeline event. AI output is
 advisory only; it never changes applicant status or makes recruiter decisions.
 
+## Automated candidate emails
+
+Apply:
+
+```text
+supabase/migrations/20260609100000_add_automated_email_delivery.sql
+```
+
+Configure the recruitment identity in `backend/.env`:
+
+```env
+EMAIL_COMPANY_NAME=TalentFlow AI
+EMAIL_RECRUITMENT_TEAM_NAME=Talent Acquisition Team
+EMAIL_REPLY_TO=
+EMAIL_CAREERS_URL=
+```
+
+Candidate emails use the recruiter Gmail connection and the existing
+`gmail.modify` OAuth scope. Recruiters can enable acknowledgments in Settings.
+Shortlist and rejection emails require an explicit confirmation after the
+status update. Every attempt is idempotent and recorded in `email_logs`.
+
+Available endpoint:
+
+```text
+POST /api/v1/applicants/{applicant_id}/emails/{email_type}
+```
+
+Supported email types are `acknowledgment`, `shortlisted`, and `rejected`.
+
 ## Validation
 
 ```bash

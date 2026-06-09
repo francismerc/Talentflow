@@ -48,6 +48,8 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  loadingLabel = "Working...",
+  tone = "danger",
   loading,
   onCancel,
   onConfirm,
@@ -56,6 +58,8 @@ export function ConfirmDialog({
   title: string;
   description: string;
   confirmLabel: string;
+  loadingLabel?: string;
+  tone?: "default" | "danger";
   loading?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -74,9 +78,13 @@ export function ConfirmDialog({
           type="button"
           disabled={loading}
           onClick={onConfirm}
-          className="focus-ring h-10 rounded-lg bg-red-500 px-4 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+          className={`focus-ring h-10 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50 ${
+            tone === "danger"
+              ? "bg-red-500 hover:bg-red-600"
+              : "bg-accent hover:bg-blue-700"
+          }`}
         >
-          {loading ? "Deleting..." : confirmLabel}
+          {loading ? loadingLabel : confirmLabel}
         </button>
       </div>
     </Modal>

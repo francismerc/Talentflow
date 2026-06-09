@@ -12,6 +12,7 @@ from app.schemas.gmail import (
     GmailDisconnectResponse,
     GmailProcessRequest,
     GmailProcessResponse,
+    GmailSettingsUpdate,
 )
 
 router = APIRouter(prefix="/gmail")
@@ -70,6 +71,22 @@ async def disconnect_gmail(
 ) -> GmailDisconnectResponse:
     await service.disconnect(current_user.id)
     return GmailDisconnectResponse(message="Gmail account disconnected successfully.")
+
+
+@router.patch("/settings", response_model=GmailConnectionResponse)
+async def update_gmail_settings(
+    payload: GmailSettingsUpdate,
+    service: GmailServiceDependency,
+    current_user: CurrentUserDependency,
+) -> GmailConnectionResponse:
+    connection = await service.update_settings(
+        current_user.id,
+        send_acknowledgment_emails=payload.send_acknowledgment_emails,
+    )
+    return GmailConnectionResponse(
+        message="Gmail settings updated successfully.",
+        data=connection,
+    )
 
 
 @router.post("/process", response_model=GmailProcessResponse)

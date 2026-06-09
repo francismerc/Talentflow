@@ -171,11 +171,17 @@ class ApplicantService:
 
     @classmethod
     def _to_detail(cls, record: dict) -> ApplicantDetail:
+        outgoing_emails = [
+            email
+            for email in record.get("email_logs") or []
+            if email.get("direction") == "outgoing"
+        ]
         return ApplicantDetail.model_validate(
             {
                 **record,
                 "job": record.get("jobs"),
                 "current_analysis": cls._current_analysis(record),
                 "timeline": record.get("applicant_timeline") or [],
+                "emails": outgoing_emails,
             }
         )

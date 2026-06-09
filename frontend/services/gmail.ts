@@ -9,6 +9,7 @@ export interface GmailConnection {
   last_error: string | null;
   last_synced_at: string | null;
   token_expires_at: string | null;
+  send_acknowledgment_emails: boolean;
 }
 
 interface GmailConnectionResponse {
@@ -54,6 +55,18 @@ export async function getGmailAuthorizationUrl(): Promise<string> {
 
 export async function disconnectGmail(): Promise<void> {
   await apiRequest("/gmail/connection", { method: "DELETE" });
+}
+
+export async function updateGmailSettings(
+  sendAcknowledgmentEmails: boolean,
+): Promise<GmailConnection> {
+  const response = await apiRequest<GmailConnectionResponse>("/gmail/settings", {
+    method: "PATCH",
+    body: JSON.stringify({
+      send_acknowledgment_emails: sendAcknowledgmentEmails,
+    }),
+  });
+  return response.data;
 }
 
 export async function processGmailInbox(): Promise<GmailProcessResult> {

@@ -5,6 +5,8 @@ export interface ResumeProcessResult {
   applicants_created: number;
   needs_review: number;
   failed: number;
+  acknowledgments_sent: number;
+  acknowledgment_errors: number;
 }
 
 interface ResumeProcessResponse {

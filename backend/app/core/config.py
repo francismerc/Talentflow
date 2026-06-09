@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     google_redirect_uri: str | None = None
     google_oauth_state_secret: SecretStr | None = None
     google_token_encryption_key: SecretStr | None = None
+    email_company_name: str = "TalentFlow AI"
+    email_recruitment_team_name: str = "Talent Acquisition Team"
+    email_reply_to: str | None = None
+    email_careers_url: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

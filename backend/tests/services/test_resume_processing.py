@@ -99,8 +99,24 @@ class FakeJobMatcher:
         )
 
 
+class FakeAutomatedEmail:
+    def __init__(self) -> None:
+        self.applicant_id: UUID | None = None
+        self.actor_user_id: UUID | None = None
+
+    async def send_acknowledgment_if_enabled(
+        self,
+        applicant_id: UUID,
+        *,
+        actor_user_id: UUID,
+    ) -> None:
+        self.applicant_id = applicant_id
+        self.actor_user_id = actor_user_id
+
+
 async def test_process_pending_creates_applicant() -> None:
     applicants = FakeApplicants()
+    automated_email = FakeAutomatedEmail()
     service = ResumeProcessingService(  # type: ignore[arg-type]
         attachments=FakeAttachments([attachment_record()]),
         applicants=applicants,
@@ -109,15 +125,22 @@ async def test_process_pending_creates_applicant() -> None:
         parser=FakeParser(),
         extractor=FakeExtractor(),
         job_matcher=FakeJobMatcher(),
+        automated_email=automated_email,
     )
 
-    result = await service.process_pending()
+    actor_user_id = UUID("90000000-0000-4000-8000-000000000001")
+    result = await service.process_pending(actor_user_id=actor_user_id)
 
     assert result.applicants_created == 1
     assert result.needs_review == 0
+    assert result.acknowledgments_sent == 0
     assert applicants.created is not None
     assert applicants.created["job_id"] == JOB_ID
     assert applicants.created["full_name"] == "Candidate Name"
+    assert automated_email.applicant_id == UUID(
+        "20000000-0000-4000-8000-000000000001"
+    )
+    assert automated_email.actor_user_id == actor_user_id
 
 
 async def test_unmatched_job_is_marked_for_review() -> None:

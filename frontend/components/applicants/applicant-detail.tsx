@@ -20,6 +20,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScoreRing } from "@/components/ui/score-ring";
 import { StatusBadge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/modal";
+import type { CandidateEmailType } from "@/services/applicants";
 
 export function ApplicantDetail({
   applicant,
@@ -28,6 +30,7 @@ export function ApplicantDetail({
   analysisLoading,
   analysisError,
   onStatusChange,
+  onSendEmail,
   onGenerateAnalysis,
 }: {
   applicant: Applicant;
@@ -36,9 +39,13 @@ export function ApplicantDetail({
   analysisLoading?: boolean;
   analysisError?: string;
   onStatusChange?: (status: "shortlisted" | "rejected") => void;
+  onSendEmail?: (emailType: CandidateEmailType) => void;
   onGenerateAnalysis?: () => void;
 }) {
   const [tab, setTab] = useState<"profile" | "resume">("profile");
+  const [pendingEmail, setPendingEmail] = useState<CandidateEmailType | null>(
+    null,
+  );
   const timeline = applicant.timeline ?? [];
 
   return (
@@ -58,10 +65,17 @@ export function ApplicantDetail({
           </div>
         </div>
         <div className="grid w-full grid-cols-3 gap-2 lg:flex lg:w-auto lg:flex-wrap">
-          <Button variant="outline" className="px-2 sm:px-4"><Mail className="h-4 w-4" /> <span className="hidden sm:inline">Email</span></Button>
+          <Button
+            variant="outline"
+            className="px-2 sm:px-4"
+            disabled={actionLoading}
+            onClick={() => setPendingEmail("acknowledgment")}
+          >
+            <Mail className="h-4 w-4" /> <span className="hidden sm:inline">Email</span>
+          </Button>
           <Button
             disabled={actionLoading || !["New", "Under Review", "Shortlisted", "Interview"].includes(applicant.status)}
-            onClick={() => onStatusChange?.("rejected")}
+            onClick={() => setPendingEmail("rejected")}
             variant="danger"
             className="px-2 sm:px-4"
           >
@@ -69,7 +83,7 @@ export function ApplicantDetail({
           </Button>
           <Button
             disabled={actionLoading || !["New", "Under Review"].includes(applicant.status)}
-            onClick={() => onStatusChange?.("shortlisted")}
+            onClick={() => setPendingEmail("shortlisted")}
             className="px-2 sm:px-4"
           >
             <Check className="h-4 w-4" /> <span className="hidden sm:inline">Shortlist</span>
@@ -178,6 +192,45 @@ export function ApplicantDetail({
                   {!applicant.missingSkills.length ? <span className="text-xs text-slate-400">AI analysis pending</span> : null}
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section className="surface p-5">
+            <h2 className="text-sm font-bold text-primary">Email history</h2>
+            <p className="mt-1 text-xs text-slate-400">
+              Candidate messages sent through the connected recruitment Gmail.
+            </p>
+            <div className="mt-4 space-y-3">
+              {applicant.emails.map((email) => (
+                <div
+                  key={email.id}
+                  className="rounded-xl border border-slate-100 bg-slate-50/70 p-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-bold text-primary">{email.subject}</p>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase ${
+                        email.status === "sent"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {email.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[10px] text-slate-400">
+                    {email.recipient} · {email.sentAt}
+                  </p>
+                  {email.error ? (
+                    <p className="mt-2 text-[10px] leading-4 text-red-600">
+                      {email.error}
+                    </p>
+                  ) : null}
+                </div>
+              ))}
+              {!applicant.emails.length ? (
+                <p className="text-xs text-slate-400">No candidate emails sent yet.</p>
+              ) : null}
             </div>
           </section>
         </div>
@@ -291,6 +344,53 @@ export function ApplicantDetail({
           </section>
         </div>
       </div>
+      <ConfirmDialog
+        open={pendingEmail !== null}
+        title={emailDialogCopy(pendingEmail).title}
+        description={emailDialogCopy(pendingEmail).description}
+        confirmLabel={emailDialogCopy(pendingEmail).confirmLabel}
+        loadingLabel="Sending..."
+        loading={actionLoading}
+        tone={pendingEmail === "rejected" ? "danger" : "default"}
+        onCancel={() => {
+          if (!actionLoading) setPendingEmail(null);
+        }}
+        onConfirm={() => {
+          if (!pendingEmail) return;
+          const emailType = pendingEmail;
+          setPendingEmail(null);
+          if (emailType === "shortlisted" || emailType === "rejected") {
+            onStatusChange?.(emailType);
+          } else {
+            onSendEmail?.(emailType);
+          }
+        }}
+      />
     </div>
   );
+}
+
+function emailDialogCopy(emailType: CandidateEmailType | null) {
+  if (emailType === "shortlisted") {
+    return {
+      title: "Shortlist candidate and send email?",
+      description:
+        "The applicant status will change to Shortlisted, then TalentFlow will send the shortlist email through your connected Gmail.",
+      confirmLabel: "Shortlist & send",
+    };
+  }
+  if (emailType === "rejected") {
+    return {
+      title: "Reject candidate and send email?",
+      description:
+        "The applicant status will change to Rejected before TalentFlow sends the rejection email. This action should be reviewed carefully.",
+      confirmLabel: "Reject & send",
+    };
+  }
+  return {
+    title: "Send acknowledgment email?",
+    description:
+      "TalentFlow will confirm that the candidate's application was received. This does not change applicant status.",
+    confirmLabel: "Send email",
+  };
 }

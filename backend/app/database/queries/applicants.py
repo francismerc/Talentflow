@@ -101,6 +101,17 @@ applicant_timeline(
   description,
   metadata,
   occurred_at
+),
+email_logs(
+  id,
+  direction,
+  email_type,
+  recipient_email,
+  subject,
+  status,
+  error_message,
+  sent_at,
+  created_at
 )
 """
 
@@ -216,6 +227,28 @@ class ApplicantQueries:
             self._client.table("applicants")
             .select("id")
             .eq("source_email_message_id", message_id)
+            .maybe_single()
+            .execute()
+        )
+        return response.data if response is not None else None
+
+    async def get_email_context(
+        self,
+        applicant_id: UUID,
+    ) -> dict[str, Any] | None:
+        response = await (
+            self._client.table("applicants")
+            .select(
+                """
+                id,
+                full_name,
+                email,
+                status,
+                source_email_thread_id,
+                jobs!inner(id,title)
+                """
+            )
+            .eq("id", str(applicant_id))
             .maybe_single()
             .execute()
         )

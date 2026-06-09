@@ -12,6 +12,7 @@ class GmailConnection(BaseModel):
     last_error: str | None = None
     last_synced_at: datetime | None = None
     token_expires_at: datetime | None = None
+    send_acknowledgment_emails: bool = False
 
 
 class GmailConnectionResponse(BaseModel):
@@ -33,6 +34,10 @@ class GmailAuthorizationResponse(BaseModel):
 class GmailDisconnectResponse(BaseModel):
     success: bool = True
     message: str
+
+
+class GmailSettingsUpdate(BaseModel):
+    send_acknowledgment_emails: bool
 
 
 class GmailProcessRequest(BaseModel):

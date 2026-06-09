@@ -17,6 +17,7 @@ from app.gmail.service import GmailService
 from app.schemas.auth import AuthenticatedUser
 from app.services.ai_analysis import AIAnalysisService
 from app.services.applicants import ApplicantService
+from app.services.automated_email import AutomatedEmailService
 from app.services.jobs import JobService
 from app.services.resume_processing import ResumeProcessingService
 from app.services.resume_storage import ResumeStorageService
@@ -85,12 +86,47 @@ def get_gmail_service(client: SupabaseClient) -> GmailService:
 GmailServiceDependency = Annotated[GmailService, Depends(get_gmail_service)]
 
 
+def get_automated_email_service(client: SupabaseClient) -> AutomatedEmailService:
+    settings = get_settings()
+    return AutomatedEmailService(
+        applicants=ApplicantQueries(client),
+        email_logs=EmailLogQueries(client),
+        gmail=GmailService(
+            GmailIntegrationQueries(client),
+            settings,
+            email_logs=EmailLogQueries(client),
+            email_attachments=EmailAttachmentQueries(client),
+            resume_storage=ResumeStorageService(client),
+        ),
+        settings=settings,
+    )
+
+
+AutomatedEmailServiceDependency = Annotated[
+    AutomatedEmailService,
+    Depends(get_automated_email_service),
+]
+
+
 def get_resume_processing_service(client: SupabaseClient) -> ResumeProcessingService:
+    settings = get_settings()
     return ResumeProcessingService(
         attachments=EmailAttachmentQueries(client),
         applicants=ApplicantQueries(client),
         jobs=JobQueries(client),
         storage=ResumeStorageService(client),
+        automated_email=AutomatedEmailService(
+            applicants=ApplicantQueries(client),
+            email_logs=EmailLogQueries(client),
+            gmail=GmailService(
+                GmailIntegrationQueries(client),
+                settings,
+                email_logs=EmailLogQueries(client),
+                email_attachments=EmailAttachmentQueries(client),
+                resume_storage=ResumeStorageService(client),
+            ),
+            settings=settings,
+        ),
     )
 
 
