@@ -14,6 +14,25 @@ export interface AssistantHistoryMessage {
   content: string;
 }
 
+export type AssistantActionType =
+  | "mark_under_review"
+  | "shortlist_candidate"
+  | "move_to_interview"
+  | "mark_hired"
+  | "reject_candidate"
+  | "send_shortlisted_email"
+  | "send_rejected_email";
+
+export interface AssistantActionProposal {
+  action_type: AssistantActionType;
+  applicant_id: string;
+  candidate_name: string;
+  title: string;
+  description: string;
+  confirm_label: string;
+  tone: "default" | "danger";
+}
+
 interface AssistantChatResponse {
   success: boolean;
   message: string;
@@ -21,6 +40,19 @@ interface AssistantChatResponse {
     answer: string;
     candidates: AssistantCandidate[];
     suggested_prompts: string[];
+    proposed_actions: AssistantActionProposal[];
+  };
+}
+
+interface AssistantActionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    action_type: AssistantActionType;
+    applicant_id: string;
+    candidate_name: string;
+    status: string;
+    message: string;
   };
 }
 
@@ -35,5 +67,21 @@ export async function sendAssistantMessage(
       history: history.slice(-12),
     }),
   });
+  return response.data;
+}
+
+export async function executeAssistantAction(
+  action: AssistantActionProposal,
+): Promise<AssistantActionResponse["data"]> {
+  const response = await apiRequest<AssistantActionResponse>(
+    "/assistant/actions",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        action_type: action.action_type,
+        applicant_id: action.applicant_id,
+      }),
+    },
+  );
   return response.data;
 }

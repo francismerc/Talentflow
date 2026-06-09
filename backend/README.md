@@ -178,7 +178,20 @@ The assistant receives a bounded, read-only snapshot of jobs and applicants.
 It can search candidates by skill or score, summarize the pipeline, explain
 stored AI scores, and compare candidates. Raw resumes, email addresses, phone
 numbers, Gmail tokens, and environment secrets are excluded from its context.
-The assistant cannot modify records or perform recruiter actions.
+The chat endpoint cannot modify records. For explicit recruiter requests, it
+may return one reviewable action proposal.
+
+Confirmed actions use a separate authenticated endpoint:
+
+```text
+POST /api/v1/assistant/actions
+```
+
+Supported actions move an applicant under review, shortlist, move to
+interview, mark hired, reject, or send an approved shortlisted/rejected email.
+The frontend always requires recruiter confirmation before calling the action
+endpoint. Status transitions, Gmail checks, idempotency, and timeline logging
+remain enforced by the existing application services.
 
 ## Validation
 

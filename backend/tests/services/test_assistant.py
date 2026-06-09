@@ -1,13 +1,19 @@
+from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
 
 from app.ai.gemini import GeminiStructuredResult
+from app.schemas.applicants import ApplicantStatus
 from app.schemas.assistant import (
+    AssistantActionOutput,
+    AssistantActionRequest,
+    AssistantActionType,
     AssistantChatRequest,
     AssistantOutput,
 )
-from app.services.assistant import AssistantService
+from app.schemas.emails import CandidateEmailType
+from app.services.assistant import AssistantActionService, AssistantService
 
 pytestmark = pytest.mark.anyio
 
@@ -77,6 +83,12 @@ class FakeGeminiClient:
                 ),
                 candidate_ids=[APPLICANT_ID, UNKNOWN_ID],
                 suggested_prompts=[f"Explain {APPLICANT_ID}'s score"],
+                proposed_actions=[
+                    AssistantActionOutput(
+                        action_type=AssistantActionType.SEND_SHORTLISTED_EMAIL,
+                        applicant_id=APPLICANT_ID,
+                    )
+                ],
             ),
             metadata={},
         )
@@ -93,6 +105,11 @@ async def test_chat_uses_safe_snapshot_and_filters_unknown_candidate_ids() -> No
     assert result.answer.startswith("Maya Chen")
     assert str(APPLICANT_ID) not in result.answer
     assert result.suggested_prompts == ["Explain Maya Chen's score"]
+    assert result.proposed_actions[0].candidate_name == "Maya Chen"
+    assert (
+        result.proposed_actions[0].action_type
+        is AssistantActionType.SEND_SHORTLISTED_EMAIL
+    )
     assert [candidate.applicant_id for candidate in result.candidates] == [
         APPLICANT_ID
     ]
@@ -122,3 +139,89 @@ async def test_chat_includes_only_recent_conversation_history() -> None:
     assert "Question 1" not in client.prompt
     assert "Question 2" in client.prompt
     assert "Question 9" in client.prompt
+
+
+class FakeApplicantService:
+    def __init__(self) -> None:
+        self.status_update = None
+
+    async def get_applicant(self, _: UUID) -> SimpleNamespace:
+        return SimpleNamespace(
+            id=APPLICANT_ID,
+            full_name="Maya Chen",
+            status=ApplicantStatus.SHORTLISTED,
+        )
+
+    async def update_status(
+        self,
+        _: UUID,
+        payload: object,
+        *,
+        actor_user_id: UUID,
+    ) -> SimpleNamespace:
+        self.status_update = (payload, actor_user_id)
+        return SimpleNamespace(
+            id=APPLICANT_ID,
+            full_name="Maya Chen",
+            status=ApplicantStatus.SHORTLISTED,
+        )
+
+
+class FakeAutomatedEmail:
+    def __init__(self) -> None:
+        self.sent = None
+
+    async def send_candidate_email(
+        self,
+        applicant_id: UUID,
+        email_type: CandidateEmailType,
+        *,
+        actor_user_id: UUID,
+    ) -> None:
+        self.sent = (applicant_id, email_type, actor_user_id)
+
+
+async def test_confirmed_shortlist_uses_applicant_service() -> None:
+    applicants = FakeApplicantService()
+    service = AssistantActionService(
+        applicants,  # type: ignore[arg-type]
+        FakeAutomatedEmail(),  # type: ignore[arg-type]
+    )
+
+    result = await service.execute(
+        AssistantActionRequest(
+            action_type=AssistantActionType.SHORTLIST_CANDIDATE,
+            applicant_id=APPLICANT_ID,
+        ),
+        actor_user_id=UNKNOWN_ID,
+    )
+
+    assert result.status == "shortlisted"
+    assert applicants.status_update is not None
+    payload, actor_user_id = applicants.status_update
+    assert payload.status is ApplicantStatus.SHORTLISTED
+    assert payload.note == "Confirmed through TalentFlow AI Assistant."
+    assert actor_user_id == UNKNOWN_ID
+
+
+async def test_confirmed_email_uses_automated_email_service() -> None:
+    email = FakeAutomatedEmail()
+    service = AssistantActionService(
+        FakeApplicantService(),  # type: ignore[arg-type]
+        email,  # type: ignore[arg-type]
+    )
+
+    result = await service.execute(
+        AssistantActionRequest(
+            action_type=AssistantActionType.SEND_SHORTLISTED_EMAIL,
+            applicant_id=APPLICANT_ID,
+        ),
+        actor_user_id=UNKNOWN_ID,
+    )
+
+    assert result.message == "The shortlisted email was sent to Maya Chen."
+    assert email.sent == (
+        APPLICANT_ID,
+        CandidateEmailType.SHORTLISTED,
+        UNKNOWN_ID,
+    )

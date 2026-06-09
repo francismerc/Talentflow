@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ActionProposal } from "@/components/assistant/action-proposal";
 import Link from "next/link";
 import { useAssistantChat } from "@/hooks/use-assistant-chat";
 
@@ -38,8 +39,11 @@ export function FloatingAssistant({
   const {
     messages,
     isLoading,
+    isActionLoading,
     error,
+    actionError,
     submitMessage,
+    executeAction,
     resetConversation,
   } = useAssistantChat();
   const messageEndRef = useRef<HTMLDivElement>(null);
@@ -169,6 +173,17 @@ export function FloatingAssistant({
                         ))}
                       </div>
                     ) : null}
+                    {message.role === "assistant"
+                      ? message.proposedActions?.map((action) => (
+                          <ActionProposal
+                            key={`${action.action_type}-${action.applicant_id}`}
+                            action={action}
+                            compact
+                            loading={isActionLoading}
+                            onConfirm={executeAction}
+                          />
+                        ))
+                      : null}
                   </div>
                 </div>
               ))}
@@ -185,6 +200,11 @@ export function FloatingAssistant({
               {error ? (
                 <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-[10px] leading-4 text-red-700">
                   <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {error}
+                </div>
+              ) : null}
+              {actionError ? (
+                <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-[10px] leading-4 text-red-700">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {actionError}
                 </div>
               ) : null}
               <div ref={messageEndRef} />

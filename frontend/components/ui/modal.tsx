@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export function Modal({
@@ -16,9 +17,15 @@ export function Modal({
   onClose: () => void;
   children: ReactNode;
 }) {
-  if (!open) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open || !mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-slate-950/35 p-4 backdrop-blur-sm">
       <div className="my-6 w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-floating">
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
@@ -39,7 +46,8 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

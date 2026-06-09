@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { ActionProposal } from "@/components/assistant/action-proposal";
 import Link from "next/link";
 import { useAssistantChat } from "@/hooks/use-assistant-chat";
 
@@ -35,8 +36,11 @@ export function ChatInterface() {
   const {
     messages,
     isLoading,
+    isActionLoading,
     error,
+    actionError,
     submitMessage,
+    executeAction,
     resetConversation,
   } = useAssistantChat();
 
@@ -146,6 +150,16 @@ export function ChatInterface() {
                         ))}
                       </div>
                     ) : null}
+                    {message.role === "assistant"
+                      ? message.proposedActions?.map((action) => (
+                          <ActionProposal
+                            key={`${action.action_type}-${action.applicant_id}`}
+                            action={action}
+                            loading={isActionLoading}
+                            onConfirm={executeAction}
+                          />
+                        ))
+                      : null}
                   </div>
                 </div>
               ))}
@@ -162,6 +176,11 @@ export function ChatInterface() {
               {error ? (
                 <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-700">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+                </div>
+              ) : null}
+              {actionError ? (
+                <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-700">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {actionError}
                 </div>
               ) : null}
             </div>

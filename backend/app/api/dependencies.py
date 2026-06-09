@@ -18,7 +18,7 @@ from app.gmail.service import GmailService
 from app.schemas.auth import AuthenticatedUser
 from app.services.ai_analysis import AIAnalysisService
 from app.services.applicants import ApplicantService
-from app.services.assistant import AssistantService
+from app.services.assistant import AssistantActionService, AssistantService
 from app.services.automated_email import AutomatedEmailService
 from app.services.jobs import JobService
 from app.services.resume_processing import ResumeProcessingService
@@ -95,6 +95,36 @@ def get_assistant_service(client: SupabaseClient) -> AssistantService:
 AssistantServiceDependency = Annotated[
     AssistantService,
     Depends(get_assistant_service),
+]
+
+
+def get_assistant_action_service(
+    client: SupabaseClient,
+) -> AssistantActionService:
+    settings = get_settings()
+    return AssistantActionService(
+        ApplicantService(
+            ApplicantQueries(client),
+            JobQueries(client),
+        ),
+        AutomatedEmailService(
+            applicants=ApplicantQueries(client),
+            email_logs=EmailLogQueries(client),
+            gmail=GmailService(
+                GmailIntegrationQueries(client),
+                settings,
+                email_logs=EmailLogQueries(client),
+                email_attachments=EmailAttachmentQueries(client),
+                resume_storage=ResumeStorageService(client),
+            ),
+            settings=settings,
+        ),
+    )
+
+
+AssistantActionServiceDependency = Annotated[
+    AssistantActionService,
+    Depends(get_assistant_action_service),
 ]
 
 
