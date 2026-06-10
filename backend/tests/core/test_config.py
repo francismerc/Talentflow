@@ -24,6 +24,15 @@ def test_valid_production_settings_are_accepted() -> None:
     assert settings.cors_origins == ["https://talentflow.vercel.app"]
 
 
+def test_cors_origins_remove_trailing_slashes() -> None:
+    settings = production_settings(
+        frontend_url="https://talentflow.vercel.app/",
+        backend_cors_origins="https://talentflow.vercel.app/",
+    )
+
+    assert settings.cors_origins == ["https://talentflow.vercel.app"]
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
