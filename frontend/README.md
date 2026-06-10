@@ -24,6 +24,9 @@ npm run lint
 npm run build
 ```
 
-Dashboard, Jobs, and Applicants screens read from the FastAPI backend. Reports,
-settings, and AI Assistant data remain UI fixtures while their backend features
-are implemented. Configure the backend URL with `NEXT_PUBLIC_API_URL`.
+Dashboard, Jobs, Applicants, Reports, Gmail settings, and AI Assistant features
+read from the FastAPI backend. Configure the backend URL with
+`NEXT_PUBLIC_API_URL`.
+
+For Vercel deployment, use `frontend` as the project root and configure the
+three public variables documented in `../docs/deployment.md`.

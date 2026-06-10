@@ -103,6 +103,10 @@ The Phase 3 schema and applicant workflow migrations are available in
 ## Validation
 
 ```bash
-cd frontend && npm run lint && npm run build
-cd backend && ruff check . && pytest
+npm run release:check
 ```
+
+## Deployment
+
+Production uses Supabase, Render, and Vercel. Follow the complete runbook in
+[`docs/deployment.md`](docs/deployment.md).

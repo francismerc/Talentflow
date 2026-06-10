@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "concurrently --kill-others --names frontend,backend --prefix-colors blue,green \"npm --prefix frontend run dev\" \"cd backend && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\"",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "cd backend && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"
+    "dev:backend": "cd backend && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
+    "check:frontend": "npm --prefix frontend run lint && npm --prefix frontend run build",
+    "check:backend": "cd backend && .venv/bin/ruff check . && .venv/bin/pytest",
+    "release:check": "npm run check:backend && npm run check:frontend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
